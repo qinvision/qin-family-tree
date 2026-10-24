@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="zhuqing"><head>
+<html lang="zh-CN" data-theme="zitan"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>覃氏家族族谱</title>
@@ -191,7 +191,7 @@ body.dragging main,body.dragging main *{cursor:grabbing !important;}
   width:max-content; min-width:100%;
   padding:44px 40px 120px 76px;
 }
-/* ============ 世代竖条（悬浮固定，最左侧，垂直跟随卡片） ============ */
+/* ============ 世代竖条 ============ */
 .gen-layer{
   position:fixed;
   left:10px; top:0;
@@ -297,6 +297,36 @@ body:not(.locked) .cplace{display:none;}
 body.locked .cops{display:none !important;}
 body.locked .card{cursor:default;}
 body.locked .card:hover{transform:none;box-shadow:0 3px 10px var(--shadow);}
+/* ============ 悬停详情浮窗 ============ */
+.member-tooltip{
+  position:fixed; z-index:400; display:none;
+  width:290px; max-height:72vh; overflow:auto;
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:12px 14px;
+  box-shadow:0 12px 36px rgba(0,0,0,.3);
+  font-size:12.5px; color:var(--ink); line-height:1.7;
+  pointer-events:none;
+  animation:ttFade .12s ease;
+}
+@keyframes ttFade{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:none;}}
+.member-tooltip .tt-name{
+  font-size:16px;font-weight:700;letter-spacing:1px;color:var(--accent);
+  margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--line);
+}
+.member-tooltip .tt-name small{
+  font-size:11px;color:var(--muted);font-weight:400;margin-left:8px;letter-spacing:0;
+}
+.member-tooltip .tt-row{display:flex;gap:6px;margin:2px 0;}
+.member-tooltip .tt-label{flex:0 0 62px;color:var(--muted);font-size:12px;}
+.member-tooltip .tt-value{flex:1;word-break:break-all;}
+.member-tooltip .tt-desc{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);}
+.member-tooltip .tt-desc .tt-label{flex:0 0 auto;margin-bottom:3px;display:block;}
+.member-tooltip .tt-desc .tt-value{
+  display:block;white-space:pre-wrap;font-size:12.5px;line-height:1.7;
+  max-height:170px;overflow:auto;
+}
+.member-tooltip .tt-deceased .tt-value{color:#a34a72;}
+
 /* ============ 空状态 ============ */
 .empty{margin:auto;text-align:center;color:var(--muted);padding:40px;}
 .empty-icon{
@@ -406,16 +436,16 @@ textarea{resize:vertical;line-height:1.65;}
   .form-grid{grid-template-columns:1fr;}
   .col-3,.col-4,.col-6,.col-8,.col-12{grid-column:span 1;}
   #treeWrap{padding:26px 16px 100px 66px;}
+  .member-tooltip{width:min(290px,90vw);}
 }
 /* ============ 打印 ============ */
 @media print{
-  header,.cops,.zoom-ctrl,.modal-backdrop,.gen-layer{display:none !important;}
+  header,.cops,.zoom-ctrl,.modal-backdrop,.gen-layer,.member-tooltip{display:none !important;}
   body{overflow:visible;height:auto;background:#fff;}
   main{overflow:visible;background:#fff;}
   #treeWrap{padding:10px;width:auto;zoom:1 !important;}
   .card{box-shadow:none;break-inside:avoid;background:#fff;}
   .card:hover{transform:none;box-shadow:none;}
-  /* 打印时恢复完整信息 */
   .cdates,.cplace{display:block !important;}
   .lock-info{display:none !important;}
 }
@@ -436,7 +466,7 @@ textarea{resize:vertical;line-height:1.65;}
     <button class="hbtn" id="themeBtn">🎨 主题</button>
     <div class="theme-panel" id="themePanel" hidden=""></div>
   </div>
-  <div class="clock" id="clock">2026-10-24 周六 00:16:59</div>
+  <div class="clock" id="clock">2026-10-24 周六 09:03:07</div>
   <div class="search-box">
     <input id="searchInput" placeholder="搜索姓名 / 籍贯 / 简介…" autocomplete="off">
     <div id="suggestions" class="suggestions" hidden=""></div>
@@ -448,6 +478,9 @@ textarea{resize:vertical;line-height:1.65;}
 </main>
 
 <div class="gen-layer" id="genLayer"></div>
+
+<!-- 悬停详情浮窗 -->
+<div class="member-tooltip" id="memberTooltip" style="display: none; visibility: visible; left: 1141.5px; top: 10px;"></div>
 
 <div class="zoom-ctrl">
   <button id="zoomOut" title="缩小">−</button>
@@ -472,7 +505,7 @@ textarea{resize:vertical;line-height:1.65;}
 /* =========================================================
    基础
    ========================================================= */
-const STORAGE_KEY = 'qin_family_tree_share_1792772220274';
+const STORAGE_KEY = 'qin_family_tree_share_1792803788112';
 const LOCK_KEY    = 'qin_family_tree_locked';
 const THEME_KEY   = 'qin_family_tree_theme';
 const mainEl      = document.getElementById('mainEl');
@@ -711,6 +744,91 @@ function marriageOrder(m){
   return 0;
 }
 
+/* 配偶姓名拼接 */
+function spouseNamesOf(m){
+  const names = (m.spouseIds || [])
+    .map(sid => getMember(sid))
+    .filter(Boolean)
+    .map(s => s.name);
+  return names.length ? names.join('、') : '—';
+}
+
+/* =========================================================
+   悬停详情浮窗
+   ========================================================= */
+const memberTooltip = document.getElementById('memberTooltip');
+
+function showMemberTooltip(m, cardEl){
+  if(!locked) return;
+  if(!cardEl || !m) return;
+
+  const deceased = !!(m.death || '').trim();
+  const gen = generationOf(m.id);
+  const birth = (m.birth || '').trim() || '不详';
+  const death = (m.death || '').trim();
+  const lifeText = deceased
+    ? `${birth} — ${death}`
+    : `${birth} — 在世`;
+
+  const rankText = (m.rank || '').trim() || siblingRankOf(m) || '—';
+  const spouseText = spouseNamesOf(m);
+
+  let html = `
+    <div class="tt-name">
+      ${esc(m.name)}
+      <small>${m.gender === 'F' ? '女' : '男'} · ${toCN(gen)}世</small>
+    </div>
+    <div class="tt-row"><span class="tt-label">配偶</span><span class="tt-value">${esc(spouseText)}</span></div>
+    <div class="tt-row"><span class="tt-label">生卒</span><span class="tt-value">${esc(lifeText)}</span></div>
+    <div class="tt-row"><span class="tt-label">字辈</span><span class="tt-value">${esc(m.genName || '—')}</span></div>
+    <div class="tt-row"><span class="tt-label">排行</span><span class="tt-value">${esc(rankText)}</span></div>
+    <div class="tt-row"><span class="tt-label">职业</span><span class="tt-value">${esc(m.occupation || '—')}</span></div>
+  `;
+
+  if(deceased){
+    html += `<div class="tt-row tt-deceased"><span class="tt-label">安葬处</span><span class="tt-value">${esc(m.residence || '—')}</span></div>`;
+    html += `<div class="tt-desc">
+      <span class="tt-label">生平简介</span>
+      <span class="tt-value">${m.notes ? esc(m.notes) : '暂无记载'}</span>
+    </div>`;
+  }else{
+    html += `<div class="tt-desc">
+      <span class="tt-label">人物简介</span>
+      <span class="tt-value">${m.notes ? esc(m.notes) : '暂无记载'}</span>
+    </div>`;
+  }
+
+  memberTooltip.innerHTML = html;
+  memberTooltip.style.display = 'block';
+  memberTooltip.style.visibility = 'hidden';
+  memberTooltip.style.left = '0px';
+  memberTooltip.style.top = '0px';
+
+  const rect = cardEl.getBoundingClientRect();
+  const tw = memberTooltip.offsetWidth;
+  const th = memberTooltip.offsetHeight;
+
+  let left = rect.right + 12;
+  let top = rect.top + rect.height / 2 - th / 2;
+
+  if(left + tw > window.innerWidth - 10) left = rect.left - tw - 12;
+  if(left < 10) left = 10;
+  if(top < 10) top = 10;
+  if(top + th > window.innerHeight - 10) top = window.innerHeight - th - 10;
+
+  memberTooltip.style.left = left + 'px';
+  memberTooltip.style.top = top + 'px';
+  memberTooltip.style.visibility = 'visible';
+}
+
+function hideMemberTooltip(){
+  memberTooltip.style.display = 'none';
+  memberTooltip.innerHTML = '';
+}
+
+/* 滚动、缩放、锁定切换时隐藏浮窗 */
+mainEl.addEventListener('scroll', hideMemberTooltip, { passive: true });
+
 /* =========================================================
    渲染
    ========================================================= */
@@ -820,6 +938,15 @@ function makeCard(m, isSpouse){
       <button data-act="edit" title="编辑">✎</button>
       <button data-act="del" title="删除">✕</button>
     </div>`;
+
+  /* 悬停显示详情（仅锁定状态） */
+  el.addEventListener('mouseenter', ()=>{
+    if(locked) showMemberTooltip(m, el);
+  });
+  el.addEventListener('mouseleave', ()=>{
+    hideMemberTooltip();
+  });
+
   return el;
 }
 
@@ -883,6 +1010,7 @@ function setScale(v){
   scale = Math.min(1.8, Math.max(0.35, v));
   treeWrap.style.zoom = scale;
   document.getElementById('zoomLabel').textContent = Math.round(scale * 100) + '%';
+  hideMemberTooltip();
   scheduleDraw();
 }
 
@@ -891,6 +1019,7 @@ document.getElementById('zoomOut').addEventListener('click', ()=>setScale(scale 
 
 mainEl.addEventListener('wheel', e=>{
   e.preventDefault();
+  hideMemberTooltip();
   const oldScale = scale;
   const step = e.deltaY > 0 ? -0.1 : 0.1;
   const newScale = Math.min(1.8, Math.max(0.35, oldScale + step));
@@ -932,6 +1061,7 @@ window.addEventListener('mousemove', e=>{
   if(!drag.moved && Math.hypot(dx, dy) > 4){
     drag.moved = true;
     document.body.classList.add('dragging');
+    hideMemberTooltip();
   }
   if(drag.moved){
     mainEl.scrollLeft = drag.sl - dx;
@@ -985,6 +1115,7 @@ function applyLock(){
   lockBtn.innerHTML = locked ? '🔒 已锁定' : '🔓 可编辑';
   lockBtn.classList.toggle('on', locked);
   addRootBtn.disabled = locked;
+  hideMemberTooltip();
   scheduleDraw();
 }
 
@@ -1003,6 +1134,7 @@ const modalTitle = document.getElementById('modalTitle');
 
 function openModal(opts){
   modalState = opts || {};
+  hideMemberTooltip();
 
   const isEdit = !!modalState.editId;
   const base = isEdit ? (getMember(modalState.editId) || {}) : {};
@@ -1079,6 +1211,13 @@ function openModal(opts){
   const isBirthUnknown = (m.birth === '失考');
   const isDeathUnknown = (m.death === '失考');
   const residenceLabel = (m.death || '').trim() ? '安葬地' : '居住地';
+
+  /* 简介标签：死者用“生平简介”，生者用“人物简介” */
+  const notesIsDeceased = !!(m.death || '').trim();
+  const notesLabel = notesIsDeceased ? '生平简介' : '人物简介';
+  const notesPlaceholder = notesIsDeceased
+    ? '记录生平事迹、功名、迁徙等信息…'
+    : '记录人物事迹、职业、成就等信息…';
 
   modalBody.innerHTML = `
     <div class="form-grid">
@@ -1161,8 +1300,8 @@ function openModal(opts){
       </div>
 
       <div class="form-row col-12">
-        <label>生平简介</label>
-        <textarea id="f_notes" rows="6" placeholder="记录生平事迹、功名、迁徙等信息…">${esc(m.notes || '')}</textarea>
+        <label id="notesLabel">${notesLabel}</label>
+        <textarea id="f_notes" rows="6" placeholder="${notesPlaceholder}">${esc(m.notes || '')}</textarea>
       </div>
     </div>`;
 
@@ -1170,10 +1309,20 @@ function openModal(opts){
     this.classList.toggle('active');
   });
 
-  const updateResidenceLabel = ()=>{
+  const updateDeathRelatedLabels = ()=>{
     const deathVal = (document.getElementById('f_death').value || '').trim();
+
     const lbl = document.getElementById('residenceLabel');
     if(lbl) lbl.textContent = deathVal ? '安葬地' : '居住地';
+
+    const nl = document.getElementById('notesLabel');
+    const ta = document.getElementById('f_notes');
+    if(nl && ta){
+      nl.textContent = deathVal ? '生平简介' : '人物简介';
+      ta.placeholder = deathVal
+        ? '记录生平事迹、功名、迁徙等信息…'
+        : '记录人物事迹、职业、成就等信息…';
+    }
   };
 
   modalBody.querySelectorAll('.unk-btn').forEach(btn=>{
@@ -1188,11 +1337,11 @@ function openModal(opts){
         inp.readOnly = true;
         btn.classList.add('active');
       }
-      if(btn.dataset.target === 'f_death') updateResidenceLabel();
+      if(btn.dataset.target === 'f_death') updateDeathRelatedLabels();
     });
   });
 
-  document.getElementById('f_death').addEventListener('input', updateResidenceLabel);
+  document.getElementById('f_death').addEventListener('input', updateDeathRelatedLabels);
 
   backdrop.classList.add('show');
   setTimeout(()=>{
@@ -1388,7 +1537,7 @@ document.getElementById('backupBtn').addEventListener('click', ()=>{
   if(members.length === 0){ alert('当前没有可导出的数据。'); return; }
   const payload = {
     app: '覃氏家族族谱',
-    version: 4,
+    version: 5,
     exportedAt: new Date().toISOString(),
     members
   };
@@ -1409,6 +1558,9 @@ function exportShareHtml(){
 
   const gl = clone.querySelector('#genLayer');
   if(gl) gl.innerHTML = '';
+
+  const mt = clone.querySelector('#memberTooltip');
+  if(mt){ mt.innerHTML = ''; mt.style.display = 'none'; }
 
   const sg = clone.querySelector('#suggestions');
   if(sg){ sg.innerHTML = ''; sg.hidden = true; }
@@ -1516,6 +1668,7 @@ addRootBtn.addEventListener('click', ()=>openModal({}));
    ========================================================= */
 let resizeTimer = null;
 window.addEventListener('resize', ()=>{
+  hideMemberTooltip();
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(scheduleDraw, 160);
 });
