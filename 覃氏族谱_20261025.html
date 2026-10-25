@@ -78,7 +78,7 @@ body{
 header{
   flex:0 0 auto; display:flex; align-items:center; gap:7px; flex-wrap:wrap;
   background:var(--header-bg); color:var(--header-ink); padding:10px 18px;
-  box-shadow:0 2px 14px rgba(0,0,0,.22); z-index:20;
+  box-shadow:0 2px 14px rgba(0,0,0,.22); z-index:20; position:relative;
 }
 h1{font-size:17px;letter-spacing:4px;font-weight:600;white-space:nowrap;}
 h1 span{color:var(--header-accent);}
@@ -135,18 +135,23 @@ body.dragging main *{cursor:grabbing !important;}
 #canvas{
   position:relative; transform-origin:0 0;
 }
-/* 世代竖条 */
-#genLayer{position:absolute; left:0; top:0; width:32px; height:100%; pointer-events:none; z-index:5;}
+
+/* ============ 世代条（固定悬浮，永远可见） ============ */
+#genLayer{
+  position:fixed; inset:0; pointer-events:none; z-index:25;
+}
 .gen-bar{
-  position:absolute; left:0; width:32px; border-radius:16px;
+  position:absolute; width:30px; border-radius:15px;
   background:linear-gradient(180deg,var(--gen-bg1),var(--gen-bg2));
   border:1px solid var(--gen-border);
   display:flex; align-items:center; justify-content:center; overflow:hidden;
+  box-shadow:0 2px 10px var(--shadow);
 }
 .gen-bar span{
   writing-mode:vertical-rl; text-orientation:upright;
   font-size:12px; letter-spacing:4px; color:var(--gen-ink); font-weight:700;
 }
+
 /* SVG 连线层 */
 #wireLayer{position:absolute; left:0; top:0; overflow:visible; z-index:1; pointer-events:none;}
 #wireLayer line{stroke:var(--line); stroke-width:2;}
@@ -184,6 +189,21 @@ body.dragging main *{cursor:grabbing !important;}
 .cops button:hover{background:var(--accent);color:#fff;}
 body.locked .cops{display:none;}
 body.locked .card:hover{transform:none;box-shadow:0 3px 10px var(--shadow);}
+
+/* ============ 添加菜单（＋ 号选择） ============ */
+.add-menu{
+  position:fixed; z-index:320; min-width:142px;
+  background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  box-shadow:0 14px 36px rgba(0,0,0,.28); padding:5px;
+}
+.add-menu[hidden]{display:none;}
+.add-menu button{
+  display:flex; align-items:center; gap:9px; width:100%;
+  padding:9px 12px; border:none; background:transparent; border-radius:7px;
+  font-family:inherit; font-size:13.5px; color:var(--ink); cursor:pointer; text-align:left;
+}
+.add-menu button:hover{background:var(--soft); color:var(--accent);}
+.add-menu .am-ico{font-size:15px; line-height:1;}
 
 /* ============ 缩放控件 ============ */
 .zoom-ctrl{
@@ -290,7 +310,7 @@ textarea{resize:vertical;line-height:1.65;}
 
 <header>
   <h1>覃氏<span>族谱</span></h1>
-  <button class="hbtn primary" id="addRootBtn" disabled>＋ 添加始祖</button>
+  <button class="hbtn primary" id="addRootBtn" disabled>＋ 添加成员</button>
   <button class="hbtn on" id="lockBtn">🔒 已锁定</button>
   <button class="hbtn" id="backupBtn">备份数据</button>
   <button class="hbtn" id="shareBtn">导出网页</button>
@@ -309,9 +329,14 @@ textarea{resize:vertical;line-height:1.65;}
 <main id="mainEl">
   <div id="canvas">
     <svg id="wireLayer"></svg>
-    <div id="genLayer"></div>
   </div>
 </main>
+
+<!-- 世代条：脱离 canvas，固定悬浮 -->
+<div id="genLayer"></div>
+
+<!-- ＋ 号选择菜单 -->
+<div class="add-menu" id="addMenu" hidden></div>
 
 <div class="member-tooltip" id="memberTooltip"></div>
 
@@ -360,7 +385,7 @@ const CARD_H = 92;
 const SPOUSE_GAP = 14;
 const UNIT_GAP = 50;
 const ROW_H = 160;          /* 每个世代垂直间距 */
-const X_OFFSET = 80;         /* 左边给世代条留空间 */
+const X_OFFSET = 80;        /* 左边给世代条留空间 */
 const Y_OFFSET = 40;        /* 顶部留白 */
 const V_BUS = 40;           /* 父子连线垂直段 */
 
@@ -471,19 +496,16 @@ function childStatsOf(id){
    布局算法：后序遍历分配 x，y 由世代决定
    ========================================================= */
 function computeLayout(){
-  /* 为每个男性建立 familyUnit */
   const units = new Map();
   members.filter(m=>m.gender!=='F').forEach(m=>{
     units.set(m.id, { head:m, kids:[], x:0, width:0, y:0, spouseCount:0 });
   });
-  /* 填充父子关系（只连男性孩子，女性作为配偶挂在单元里） */
   units.forEach(u=>{
     u.kids = maleChildrenOf(u.head.id).map(k=>units.get(k.id)).filter(Boolean);
     u.spouseCount = spouseFemales(u.head).length;
     u.width = CARD_W + u.spouseCount * (CARD_W + SPOUSE_GAP);
   });
 
-  /* 后序分配 x：叶子从左到右，中间节点居中于孩子 */
   let leafX = X_OFFSET;
   function dfs(unit){
     if(unit.kids.length===0){
@@ -497,7 +519,6 @@ function computeLayout(){
   const roots = members.filter(m=>m.gender!=='F' && !m.fatherId && !m.motherId).map(m=>units.get(m.id)).filter(Boolean);
   roots.forEach(dfs);
 
-  /* 孤儿（无父的男性）如果没被 roots 覆盖，也挂进去 */
   units.forEach(u=>{
     if(u.x===0 && u.width>0 && !u.kids.length){
       u.x = leafX + u.width/2;
@@ -505,7 +526,6 @@ function computeLayout(){
     }
   });
 
-  /* y = 世代 * ROW_H */
   units.forEach(u=>{ u.y = Y_OFFSET + (generationOf(u.head.id)-1) * ROW_H; });
 
   return { units, roots };
@@ -519,33 +539,42 @@ function render(){
   renderAll();
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     mainEl.scrollLeft = sl; mainEl.scrollTop = st;
+    positionGenBars();
   }));
 }
 
 function renderAll(){
-  /* 清空旧卡片（保留 layer 容器） */
-  canvas.querySelectorAll('.card').forEach(el=>el.remove());
+  canvas.querySelectorAll('.card, .empty').forEach(el=>el.remove());
   wireLayer.innerHTML = '';
   genLayer.innerHTML = '';
+  genBarDefs = [];
 
   if(members.length===0){
-    canvas.innerHTML = `<div class="empty" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.style.cssText = 'position:absolute;left:440px;top:180px;';
+    empty.innerHTML = `
       <div class="empty-icon">覃</div><h2>尚无族谱数据</h2>
-      <p>点击「添加始祖」开始建立家族族谱</p>
-      <div class="empty-actions"><button class="primary" onclick="openModal({})">＋ 添加始祖</button></div>
-    </div>`;
+      <p>点击「＋ 添加成员」开始建立家族族谱</p>
+      <div class="empty-actions"><button class="primary" id="emptyAddBtn">＋ 添加成员</button></div>`;
+    canvas.appendChild(empty);
+    canvas.style.width = '900px';
+    canvas.style.height = '620px';
+    wireLayer.style.width = '900px';
+    wireLayer.style.height = '620px';
+    const eb = document.getElementById('emptyAddBtn');
+    if(eb) eb.addEventListener('click', ()=> openModal({ gender:'M' }));
+    positionGenBars();
     return;
   }
 
-  const { units, roots } = computeLayout();
+  const { units } = computeLayout();
 
   /* --- 渲染卡片 --- */
   units.forEach(u=>{
     const head = u.head;
-    /* 丈夫卡 */
     const headLeft = u.x - u.width/2;
     renderCard(head, headLeft, u.y, false);
-    /* 配偶卡 */
     spouseFemales(head).forEach((sp,i)=>{
       const spLeft = headLeft + CARD_W + SPOUSE_GAP + i*(CARD_W + SPOUSE_GAP);
       renderCard(sp, spLeft, u.y, true);
@@ -555,26 +584,23 @@ function renderAll(){
   /* --- 渲染连线（SVG） --- */
   let maxX = 0, maxY = 0;
   units.forEach(u=>{
-    const head = u.head;
     const headCX = u.x;
     const headBottom = u.y + CARD_H;
-    /* 夫妻连线：丈夫卡右边缘 → 配偶卡左边缘 */
-    spouseFemales(head).forEach((sp,i)=>{
-      const x1 = headLeftOf(u) + CARD_W + i*(CARD_W + SPOUSE_GAP);
+    const headLeft = u.x - u.width/2;
+
+    spouseFemales(u.head).forEach((sp,i)=>{
+      const x1 = headLeft + CARD_W + i*(CARD_W + SPOUSE_GAP);
       const x2 = x1 + SPOUSE_GAP;
       const y = u.y + CARD_H/2;
       drawWire(x1, y, x2, y, 'spouse-wire');
     });
-    /* 父子连线 */
+
     if(u.kids.length){
       const busY = headBottom + V_BUS/2;
-      /* 父卡底部到 bus */
       drawWire(headCX, headBottom, headCX, busY);
-      /* bus 横线：从第一个孩子中心到最后一个孩子中心 */
       const firstKidCX = u.kids[0].x;
       const lastKidCX = u.kids[u.kids.length-1].x;
       drawWire(firstKidCX, busY, lastKidCX, busY);
-      /* 每个孩子：bus 到孩子顶部 */
       u.kids.forEach(kid=>{
         drawWire(kid.x, busY, kid.x, kid.y);
       });
@@ -583,7 +609,6 @@ function renderAll(){
     maxY = Math.max(maxY, u.y + CARD_H + 60);
   });
 
-  /* 画布尺寸 */
   canvas.style.width = (maxX + 80) + 'px';
   canvas.style.height = (maxY + 80) + 'px';
   wireLayer.style.width = (maxX + 80) + 'px';
@@ -591,8 +616,6 @@ function renderAll(){
 
   /* --- 世代条 --- */
   renderGenBars(units);
-
-  function headLeftOf(u){ return u.x - u.width/2; }
 }
 
 function renderCard(m, left, top, isSpouse){
@@ -624,9 +647,9 @@ function renderCard(m, left, top, isSpouse){
     </div>
     <div class="cinfo">${esc(info)}</div>
     <div class="cops">
-      <button data-act="child" title="添加亲属">＋</button>
+      <button data-act="child" title="添加子女">＋</button>
       <button data-act="spouse" title="添加配偶">♥</button>
-      <button data-act="edit" title="编辑">✎</button>
+      <button data-act="print" title="打印直系成员表">🖨</button>
       <button data-act="del" title="删除">✕</button>
     </div>`;
 
@@ -645,7 +668,14 @@ function drawWire(x1,y1,x2,y2, cls){
   wireLayer.appendChild(line);
 }
 
+/* =========================================================
+   世代条：固定悬浮，永远可见
+   ========================================================= */
+let genBarDefs = [];   /* [{g, top, bottom}] 画布坐标系 */
+
 function renderGenBars(units){
+  genLayer.innerHTML = '';
+  genBarDefs = [];
   const genMap = new Map();
   units.forEach(u=>{
     const g = generationOf(u.head.id);
@@ -656,17 +686,50 @@ function renderGenBars(units){
     cur.bottom = Math.max(cur.bottom, bottom);
     genMap.set(g, cur);
   });
+
   [...genMap.keys()].sort((a,b)=>a-b).forEach(g=>{
     const {top,bottom} = genMap.get(g);
     if(bottom-top < 4) return;
+    genBarDefs.push({ g, top, bottom });
     const bar = document.createElement('div');
     bar.className = 'gen-bar';
-    bar.style.top = top + 'px';
-    bar.style.height = Math.max(40, bottom-top) + 'px';
     bar.innerHTML = `<span>${toCN(g)}世</span>`;
     genLayer.appendChild(bar);
   });
+
+  positionGenBars();
 }
+
+function positionGenBars(){
+  const bars = genLayer.children;
+  if(!bars.length) return;
+  const rect = mainEl.getBoundingClientRect();
+  const st = mainEl.scrollTop;
+  const barW = 30;
+  const left = Math.max(2, rect.left + 6);
+
+  for(let i=0;i<bars.length;i++){
+    const bar = bars[i];
+    const def = genBarDefs[i];
+    if(!def){ bar.style.display = 'none'; continue; }
+
+    const topY  = rect.top + def.top * scale - st;
+    const fullH = (def.bottom - def.top) * scale;
+    const visTop    = Math.max(rect.top + 4, topY);
+    const visBottom = Math.min(rect.bottom - 4, topY + fullH);
+
+    if(visBottom - visTop < 20){ bar.style.display = 'none'; continue; }
+
+    bar.style.display = 'flex';
+    bar.style.left   = left + 'px';
+    bar.style.width  = barW + 'px';
+    bar.style.top    = visTop + 'px';
+    bar.style.height = (visBottom - visTop) + 'px';
+  }
+}
+
+mainEl.addEventListener('scroll', positionGenBars, {passive:true});
+window.addEventListener('resize', positionGenBars);
 
 /* =========================================================
    缩放与拖拽
@@ -674,10 +737,10 @@ function renderGenBars(units){
 function setScale(v){
   scale = Math.min(1.8, Math.max(0.35, v));
   canvas.style.transform = `scale(${scale})`;
-  /* 调整 canvas 所占空间，使滚动条正确 */
   canvas.style.transformOrigin = '0 0';
   document.getElementById('zoomLabel').textContent = Math.round(scale*100)+'%';
   hideTooltip();
+  positionGenBars();
 }
 document.getElementById('zoomIn').addEventListener('click', ()=>setScale(scale+0.1));
 document.getElementById('zoomOut').addEventListener('click', ()=>setScale(scale-0.1));
@@ -697,6 +760,7 @@ mainEl.addEventListener('wheel', e=>{
   setScale(newScale);
   mainEl.scrollLeft = cx * newScale - mx;
   mainEl.scrollTop = cy * newScale - my;
+  positionGenBars();
 }, {passive:false});
 
 /* 拖拽平移 */
@@ -725,6 +789,62 @@ window.addEventListener('mouseup', ()=>{
 });
 
 /* =========================================================
+   ＋ 号选择菜单（增加儿子 / 增加女儿）
+   ========================================================= */
+const addMenu = document.getElementById('addMenu');
+let addMenuCtx = null;
+
+function showAddMenu(anchorEl, parentId, saveFirst){
+  addMenuCtx = { parentId: parentId || null, saveFirst: !!saveFirst };
+  addMenu.innerHTML = `
+    <button data-gender="M"><span class="am-ico">👦</span>增加儿子</button>
+    <button data-gender="F"><span class="am-ico">👧</span>增加女儿</button>`;
+  addMenu.hidden = false;
+
+  const r = anchorEl.getBoundingClientRect();
+  const mw = addMenu.offsetWidth, mh = addMenu.offsetHeight;
+  let left = r.left + r.width/2 - mw/2;
+  let top  = r.bottom + 6;
+  if(left < 8) left = 8;
+  if(left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8;
+  if(top + mh > window.innerHeight - 8) top = r.top - mh - 6;
+  if(top < 8) top = 8;
+  addMenu.style.left = left + 'px';
+  addMenu.style.top  = top + 'px';
+}
+
+function hideAddMenu(){
+  addMenu.hidden = true;
+  addMenuCtx = null;
+}
+
+addMenu.addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-gender]');
+  if(!btn) return;
+  const gender = btn.dataset.gender;
+  const ctx = addMenuCtx;
+  hideAddMenu();
+  if(!ctx) return;
+
+  let parentId = ctx.parentId;
+  if(ctx.saveFirst){
+    const saved = submitForm();
+    if(!saved) return;
+    parentId = saved.id;
+  }
+  openModal({ parentId, gender });
+});
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#addMenu') &&
+     !e.target.closest('[data-act="child"]') &&
+     e.target.id !== 'addRootBtn' &&
+     e.target.id !== 'addMemberBtn'){
+    hideAddMenu();
+  }
+});
+
+/* =========================================================
    卡片点击
    ========================================================= */
 canvas.addEventListener('click', e=>{
@@ -740,11 +860,186 @@ canvas.addEventListener('click', e=>{
     if(act==='edit') openModal({editId:id});
     else if(act==='del') deleteMember(id);
     else if(act==='spouse') openModal({spouseId:id});
-    else if(act==='child') openModal({parentId:id});
+    else if(act==='child') showAddMenu(btn, id);
+    else if(act==='print') printMember(id);
   }else{
     openModal({editId:id});
   }
 });
+
+/* =========================================================
+   打印：本人 + 配偶 + 直系长辈 + 直系后裔（旁系不打印）
+   ========================================================= */
+function collectPrintMembers(rootId){
+  const root = getMember(rootId);
+  if(!root) return [];
+  const ids = new Set();
+  const add = x => { if(x && x.id) ids.add(x.id); };
+
+  /* 1. 本人及配偶 */
+  add(root);
+  (root.spouseIds||[]).forEach(sid=>add(getMember(sid)));
+
+  /* 2. 直系长辈：父 / 母逐级向上，含其配偶 */
+  const upStack = [root];
+  const seenUp = new Set([root.id]);
+  while(upStack.length){
+    const cur = upStack.pop();
+    [cur.fatherId, cur.motherId].forEach(pid=>{
+      const p = getMember(pid);
+      if(!p || seenUp.has(p.id)) return;
+      seenUp.add(p.id);
+      add(p);
+      (p.spouseIds||[]).forEach(sid=>{
+        const s = getMember(sid);
+        if(s && !seenUp.has(s.id)){ seenUp.add(s.id); add(s); }
+      });
+      upStack.push(p);
+    });
+  }
+
+  /* 3. 本人直系后裔：子 / 女逐级向下，含其配偶 */
+  const downStack = [root];
+  const seenDown = new Set([root.id]);
+  while(downStack.length){
+    const cur = downStack.pop();
+    childrenOf(cur.id).forEach(k=>{
+      if(seenDown.has(k.id)) return;
+      seenDown.add(k.id);
+      add(k);
+      (k.spouseIds||[]).forEach(sid=>{
+        const s = getMember(sid);
+        if(s && !seenDown.has(s.id)){ seenDown.add(s.id); add(s); }
+      });
+      downStack.push(k);
+    });
+  }
+
+  return members.filter(m=>ids.has(m.id));
+}
+
+/* 用布局坐标给成员排序，保证同代夫妻相邻、兄弟按长幼 */
+function memberSortIndex(){
+  const map = new Map();
+  try{
+    const { units } = computeLayout();
+    units.forEach(u=>{
+      const headLeft = u.x - u.width/2;
+      map.set(u.head.id, headLeft + CARD_W/2);
+      spouseFemales(u.head).forEach((sp,i)=>{
+        const spLeft = headLeft + CARD_W + SPOUSE_GAP + i*(CARD_W + SPOUSE_GAP);
+        map.set(sp.id, spLeft + CARD_W/2);
+      });
+    });
+  }catch(e){}
+  return map;
+}
+
+function printMember(id){
+  const root = getMember(id);
+  if(!root){ alert('未找到该成员'); return; }
+  hideTooltip();
+
+  const list = collectPrintMembers(id);
+  const order = memberSortIndex();
+  list.sort((a,b)=>{
+    const ga = generationOf(a.id), gb = generationOf(b.id);
+    if(ga !== gb) return ga - gb;
+    const oa = order.has(a.id) ? order.get(a.id) : Number.MAX_SAFE_INTEGER;
+    const ob = order.has(b.id) ? order.get(b.id) : Number.MAX_SAFE_INTEGER;
+    if(oa !== ob) return oa - ob;
+    return String(a.name).localeCompare(String(b.name), 'zh');
+  });
+
+  const rows = list.map(m=>{
+    const gen = generationOf(m.id);
+    return `<tr>
+      <td>${toCN(gen)}世</td>
+      <td class="nm">${esc(m.name)}</td>
+      <td>${m.gender==='F'?'女':'男'}</td>
+      <td>${esc(m.genName || '—')}</td>
+      <td>${esc(m.marriageType || '元配')}</td>
+      <td>${esc(siblingRankOf(m) || '—')}</td>
+      <td>${esc(m.birth || '—')}</td>
+      <td>${esc(m.death || '—')}</td>
+      <td>${esc(m.occupation || '—')}</td>
+    </tr>`;
+  }).join('');
+
+  const d = new Date();
+  const today = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+
+  const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+  <title>覃氏家族族谱 · 直系成员表</title>
+  <style>
+    @page{size:A4 portrait; margin:14mm 12mm;}
+    *{box-sizing:border-box;}
+    body{font-family:"Noto Serif SC","Songti SC","SimSun","Microsoft YaHei",serif;color:#1f1a14;margin:0;}
+    .head{text-align:center;margin-bottom:14px;}
+    .head h1{font-size:20px;letter-spacing:6px;margin:0 0 6px;font-weight:700;}
+    .head .sub{font-size:12px;color:#6b6155;letter-spacing:1px;}
+    table{width:100%;border-collapse:collapse;font-size:12.5px;}
+    th,td{border:1px solid #8a8072;padding:6px;text-align:center;vertical-align:middle;line-height:1.5;}
+    th{background:#efe6d4;font-weight:700;letter-spacing:1px;}
+    td.nm{font-weight:700;}
+    tbody tr:nth-child(even) td{background:#faf7f0;}
+    .foot{margin-top:14px;font-size:11.5px;color:#6b6155;display:flex;justify-content:space-between;}
+  </style></head><body>
+    <div class="head">
+      <h1>覃氏家族族谱</h1>
+      <div class="sub">直系成员表 · 中心人物：${esc(root.name)}（${toCN(generationOf(root.id))}世） · 共 ${list.length} 人</div>
+    </div>
+    <table>
+      <thead><tr>
+        <th style="width:9%">世代</th>
+        <th style="width:13%">姓名</th>
+        <th style="width:7%">性别</th>
+        <th style="width:11%">字辈</th>
+        <th style="width:9%">婚配</th>
+        <th style="width:11%">排行</th>
+        <th style="width:13%">出生</th>
+        <th style="width:13%">逝世</th>
+        <th style="width:14%">职业职务</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="foot">
+      <span>打印范围：本人及配偶 · 直系长辈 · 直系后裔（不含旁系）</span>
+      <span>打印日期：${today}</span>
+    </div>
+  </body></html>`;
+
+  openPrintFrame(html);
+}
+
+function openPrintFrame(html){
+  const old = document.getElementById('printFrame');
+  if(old) old.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'printFrame';
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+
+  const doPrint = ()=>{
+    try{
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    }catch(err){ console.warn('打印失败：', err); }
+  };
+
+  if(iframe.contentWindow.document.readyState === 'complete'){
+    setTimeout(doPrint, 260);
+  }else{
+    iframe.onload = ()=> setTimeout(doPrint, 260);
+    setTimeout(doPrint, 500); /* 兜底 */
+  }
+
+  setTimeout(()=>{ const f = document.getElementById('printFrame'); if(f) f.remove(); }, 60000);
+}
 
 /* =========================================================
    锁定
@@ -757,8 +1052,12 @@ function applyLock(){
   lockBtn.classList.toggle('on', locked);
   addRootBtn.disabled = locked;
   hideTooltip();
+  if(locked) hideAddMenu();
 }
 lockBtn.addEventListener('click', ()=>{ locked=!locked; applyLock(); });
+
+/* 顶栏 ＋ 按钮：复制 ＋ 号图标的选择功能 */
+addRootBtn.addEventListener('click', ()=> showAddMenu(addRootBtn, null));
 
 /* =========================================================
    悬停详情
@@ -785,7 +1084,7 @@ function showTooltip(m, cardEl){
     <div class="tt-row"><span class="tt-label">生卒</span><span class="tt-value">${esc(lifeText)}</span></div>
     <div class="tt-row"><span class="tt-label">排行</span><span class="tt-value">${esc(rankText)}</span></div>
     <div class="tt-row"><span class="tt-label">职业</span><span class="tt-value">${esc(m.occupation||'—')}</span></div>
-    <div class="tt-desc"><span class="tt-label">${deceased?'生平简介':'人物简介'}</span><span class="tt-value">${m.notes?esc(m.notes):'暂无记载'}</span></div>`;
+    <div class="tt-desc"><span class="tt-label">${deceased?'人物生平':'人物简介'}</span><span class="tt-value">${m.notes?esc(m.notes):'暂无记载'}</span></div>`;
   memberTooltip.style.display = 'block';
   const rect = cardEl.getBoundingClientRect();
   const tw = memberTooltip.offsetWidth, th = memberTooltip.offsetHeight;
@@ -811,6 +1110,7 @@ const modalTitle = document.getElementById('modalTitle');
 function openModal(opts){
   modalState = opts || {};
   hideTooltip();
+  hideAddMenu();
   const isEdit = !!modalState.editId;
   const base = isEdit ? (getMember(modalState.editId)||{}) : {};
   const m = Object.assign({}, base);
@@ -831,13 +1131,17 @@ function openModal(opts){
       if(sp){ m.spouseIds = [sp.id]; m.gender = sp.gender==='M'?'F':'M'; }
       surnameOn = false;
     }
+    if(modalState.gender) m.gender = modalState.gender;
   }else{
     surnameOn = (base.name||'').startsWith('覃');
   }
   if(!m.gender) m.gender = 'M';
 
-  modalTitle.textContent = isEdit ? '编辑成员 · '+(base.name||'') :
-    (modalState.spouseId ? '添加配偶' : (modalState.parentId ? '添加子嗣' : '添加成员'));
+  let addTitle = '添加成员';
+  if(isEdit) addTitle = '编辑成员 · ' + (base.name||'');
+  else if(modalState.spouseId) addTitle = '添加配偶';
+  else if(modalState.parentId) addTitle = (modalState.gender === 'F') ? '添加女儿' : '添加儿子';
+  modalTitle.textContent = addTitle;
 
   const exclude = new Set();
   if(m.id){ exclude.add(m.id); descendantsOf(m.id).forEach(d=>exclude.add(d)); }
@@ -869,7 +1173,9 @@ function openModal(opts){
   const shownName = surnameOn ? (m.name||'').replace(/^覃/,'') : (m.name||'');
   const isBirthUnknown = m.birth==='失考';
   const isDeathUnknown = m.death==='失考';
-  const residenceLabel = (m.death||'').trim() ? '安葬地' : '居住地';
+  const deceased = (m.death||'').trim() !== '';
+  const residenceLabel = deceased ? '安葬地' : '居住地';
+  const notesLabel     = deceased ? '人物生平' : '人物简介';
 
   modalBody.innerHTML = `
     <div class="form-grid">
@@ -906,23 +1212,41 @@ function openModal(opts){
 
       <div class="form-row col-4"><label>字辈</label><input id="f_gen" value="${esc(m.genName||'')}" placeholder="如 德字辈"></div>
       <div class="form-row col-4"><label>籍贯</label><input id="f_birthplace" value="${esc(m.birthplace||'')}" placeholder="如 广西桂平"></div>
-      <div class="form-row col-4"><label id="residenceLabel">${residenceLabel}</label><input id="f_residence" value="${esc(m.residence||'')}" placeholder="现居 / 安葬地"></div>
+      <div class="form-row col-4"><label id="residenceLabel">${residenceLabel}</label><input id="f_residence" value="${esc(m.residence||'')}" placeholder="${deceased?'安葬地':'现居 / 安葬地'}"></div>
 
       <div class="form-row col-6"><label>职业 / 职务</label><input id="f_occupation" value="${esc(m.occupation||'')}" placeholder="如 教师、务农"></div>
       <div class="form-row col-6"><label>本人备注</label><select id="f_relationNote">${relationOptions}</select></div>
 
-      <div class="form-row col-12"><label id="notesLabel">${(m.death||'').trim()?'生平简介':'人物简介'}</label>
+      <div class="form-row col-12"><label id="notesLabel">${notesLabel}</label>
         <textarea id="f_notes" rows="5" placeholder="记录人物事迹…">${esc(m.notes||'')}</textarea></div>
     </div>`;
 
   document.getElementById('surnameBtn').addEventListener('click', function(){ this.classList.toggle('active'); });
+
+  /* ---- 逝世 ↔ 安葬地 / 人物生平 实时联动 ---- */
+  const deathInput      = document.getElementById('f_death');
+  const residenceLabelEl= document.getElementById('residenceLabel');
+  const notesLabelEl    = document.getElementById('notesLabel');
+  const residenceInput  = document.getElementById('f_residence');
+
+  function syncDeathLabels(){
+    const has = (deathInput.value||'').trim() !== '';
+    residenceLabelEl.textContent = has ? '安葬地' : '居住地';
+    notesLabelEl.textContent     = has ? '人物生平' : '人物简介';
+    residenceInput.placeholder   = has ? '安葬地' : '现居 / 安葬地';
+  }
+  deathInput.addEventListener('input', syncDeathLabels);
+
   document.querySelectorAll('.unk-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const inp = document.getElementById(btn.dataset.target);
       if(inp.value==='失考'){ inp.value=''; inp.readOnly=false; btn.classList.remove('active'); }
       else{ inp.value='失考'; inp.readOnly=true; btn.classList.add('active'); }
+      if(btn.dataset.target === 'f_death') syncDeathLabels();
     });
   });
+  syncDeathLabels();
+
   backdrop.classList.add('show');
   setTimeout(()=>{ const inp = document.getElementById('f_name'); if(inp) inp.focus(); }, 40);
 }
@@ -931,10 +1255,20 @@ function closeModal(){ backdrop.classList.remove('show'); modalState = {}; }
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closeModal(); });
 document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ if(backdrop.classList.contains('show')) closeModal(); hideTooltip(); }
+  if(e.key==='Escape'){
+    if(addMenu.hidden === false) hideAddMenu();
+    if(backdrop.classList.contains('show')) closeModal();
+    hideTooltip();
+  }
   if(e.key==='Enter' && backdrop.classList.contains('show') && e.target.tagName==='INPUT'){ e.preventDefault(); document.getElementById('saveBtn').click(); }
 });
-document.getElementById('saveBtn').addEventListener('click', submitForm);
+document.getElementById('saveBtn').addEventListener('click', ()=> submitForm());
+
+/* 弹窗内的「＋ 添加成员」：同样复制 ＋ 号图标的选择功能 */
+document.getElementById('addMemberBtn').addEventListener('click', function(e){
+  e.preventDefault();
+  showAddMenu(this, modalState.editId || null, true);
+});
 
 function descendantsOf(id){
   const set = new Set(); const stack = [id];
@@ -1053,7 +1387,7 @@ function focusMember(id){
   if(!el) return;
   el.scrollIntoView({behavior:'smooth', block:'center', inline:'center'});
   el.classList.remove('highlight'); void el.offsetWidth; el.classList.add('highlight');
-  setTimeout(()=>el.classList.remove('highlight'), 1800);
+  setTimeout(()=>{ el.classList.remove('highlight'); positionGenBars(); }, 1800);
 }
 
 /* =========================================================
@@ -1104,29 +1438,85 @@ function downloadFile(content, filename, mime){
 
 document.getElementById('backupBtn').addEventListener('click', ()=>{
   if(!members.length){ alert('当前没有可导出的数据。'); return; }
-  const payload = { app:'覃氏家族族谱', version:6, exportedAt:new Date().toISOString(), members };
+  const payload = { app:'覃氏家族族谱', version:7, exportedAt:new Date().toISOString(), members };
   downloadFile(JSON.stringify(payload, null, 2), `覃氏族谱_${dateStamp()}.json`, 'application/json');
 });
 
-document.getElementById('shareBtn').addEventListener('click', ()=>{
-  if(!members.length){ alert('当前没有可导出的数据。'); return; }
+/* ---------- 导出网页：内嵌全部最新数据 ---------- */
+function buildExportHTML(){
   save();
   const stamp = Date.now();
   const clone = document.documentElement.cloneNode(true);
-  /* 清空运行时状态 */
-  ['#canvas','#genLayer','#memberTooltip','#suggestions','#themePanel','#modalBody','#searchInput'].forEach(sel=>{
-    const el = clone.querySelector(sel); if(el){ el.innerHTML=''; el.removeAttribute('style'); el.hidden=true; }
-  });
-  const bd = clone.querySelector('#modalBackdrop'); if(bd) bd.classList.remove('show');
-  const zl = clone.querySelector('#zoomLabel'); if(zl) zl.textContent='100%';
+
+  /* 1. 清理运行期生成的内容 */
+  const canvasEl = clone.querySelector('#canvas');
+  if(canvasEl){
+    canvasEl.innerHTML = '<svg id="wireLayer"></svg>';
+    canvasEl.removeAttribute('style');
+    canvasEl.removeAttribute('hidden');
+  }
+  const genEl = clone.querySelector('#genLayer');
+  if(genEl){ genEl.innerHTML = ''; genEl.removeAttribute('style'); genEl.removeAttribute('hidden'); }
+
+  const tooltipEl = clone.querySelector('#memberTooltip');
+  if(tooltipEl){ tooltipEl.innerHTML = ''; tooltipEl.removeAttribute('style'); }
+
+  const sugEl = clone.querySelector('#suggestions');
+  if(sugEl){ sugEl.innerHTML = ''; sugEl.setAttribute('hidden',''); }
+
+  const themeP = clone.querySelector('#themePanel');
+  if(themeP){ themeP.innerHTML = ''; themeP.setAttribute('hidden',''); }
+
+  const menuEl = clone.querySelector('#addMenu');
+  if(menuEl){ menuEl.innerHTML = ''; menuEl.setAttribute('hidden',''); menuEl.removeAttribute('style'); }
+
+  const modalBodyEl = clone.querySelector('#modalBody');
+  if(modalBodyEl){ modalBodyEl.innerHTML = ''; }
+
+  const backdropEl = clone.querySelector('#modalBackdrop');
+  if(backdropEl){ backdropEl.classList.remove('show'); }
+
+  /* 移除运行期 iframe（打印用） */
+  clone.querySelectorAll('iframe').forEach(f=>f.remove());
+
+  const clockEl2 = clone.querySelector('#clock');
+  if(clockEl2) clockEl2.textContent = '';
+
+  const searchEl = clone.querySelector('#searchInput');
+  if(searchEl){ searchEl.removeAttribute('value'); searchEl.removeAttribute('style'); }
+
+  const zoomLabelEl = clone.querySelector('#zoomLabel');
+  if(zoomLabelEl) zoomLabelEl.textContent = '100%';
+
+  const bodyEl = clone.querySelector('body');
+  if(bodyEl) bodyEl.className = 'locked';
+
+  /* 2. 内嵌最新数据（包含所有在线编辑） */
   const de = clone.querySelector('#embedded-data');
-  if(de){ de.textContent = JSON.stringify({version:stamp, exportedAt:new Date().toISOString(), members}).replace(/</g,'\\u003c'); }
+  if(de){
+    de.textContent = JSON.stringify({
+      version: stamp,
+      exportedAt: new Date().toISOString(),
+      members: members
+    }).replace(/</g, '\\u003c');
+  }
+
+  /* 3. 存储 key 唯一化，避免读取访客浏览器里的旧数据 */
   clone.querySelectorAll('script:not([type="application/json"])').forEach(s=>{
-    s.textContent = s.textContent.replace(/const STORAGE_KEY = '[^']*';/, "const STORAGE_KEY = 'qin_family_tree_v2_'"+stamp+"';");
+    s.textContent = s.textContent.replace(
+      /const STORAGE_KEY\s*=\s*'[^']*';/,
+      `const STORAGE_KEY = 'qin_family_tree_${stamp}';`
+    );
   });
-  const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+
+  return '<!DOCTYPE html>\n' + clone.outerHTML;
+}
+
+document.getElementById('shareBtn').addEventListener('click', ()=>{
+  if(!members.length){ alert('当前没有可导出的数据。'); return; }
+  const html = buildExportHTML();
   downloadFile(html, `覃氏族谱_${dateStamp()}.html`, 'text/html');
-  setTimeout(()=>alert('导出成功！接收者打开后即可直接查看。'), 400);
+  setTimeout(()=>alert('导出成功！\n已包含全部最新数据（共 ' + members.length + ' 位成员）。\n接收者打开即可直接查看。'), 400);
 });
 
 document.getElementById('importBtn').addEventListener('click', ()=>{
@@ -1166,7 +1556,6 @@ document.getElementById('importFile').addEventListener('change', e=>{
 /* =========================================================
    启动
    ========================================================= */
-addRootBtn.addEventListener('click', ()=>openModal({}));
 try{
   locked = true;
   const t = localStorage.getItem(THEME_KEY);
