@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="zitan"><head>
+<html lang="zh-CN" data-theme="zhusha"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>覃氏家族族谱</title>
@@ -315,6 +315,34 @@ body.locked .print-btn{display:flex;}
 body.locked .cops{display:none !important;}
 body.locked .card{cursor:default;}
 body.locked .card:hover{transform:none;box-shadow:0 3px 10px var(--shadow);}
+
+/* ===== 大 + 号（编辑模式下显示） ===== */
+.big-add{
+  display:none;
+  align-items:center;justify-content:center;
+  margin-top:7px;height:22px;border-radius:6px;
+  border:1px dashed var(--line);background:var(--soft);
+  color:var(--muted);font-size:15px;line-height:1;
+  cursor:pointer;transition:.15s;font-family:inherit;
+}
+body:not(.locked) .big-add{display:flex;}
+.big-add:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* ============ 添加亲属菜单 ============ */
+.add-menu{
+  position:fixed;z-index:300;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:6px;box-shadow:0 14px 36px rgba(0,0,0,.28);
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;
+  min-width:212px;
+}
+.add-menu[hidden]{display:none;}
+.add-item{
+  padding:8px 10px;border-radius:6px;font-size:13px;color:var(--ink);
+  cursor:pointer;white-space:nowrap;transition:.15s;text-align:center;
+}
+.add-item:hover{background:var(--soft);color:var(--accent);}
+
 /* ============ 悬停详情浮窗 ============ */
 .member-tooltip{
   position:fixed; z-index:400; display:none;
@@ -395,6 +423,7 @@ body.locked .card:hover{transform:none;box-shadow:0 3px 10px var(--shadow);}
 /* 12 列表单网格 */
 .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px 14px;}
 .form-row{display:flex;flex-direction:column;gap:5px;min-width:0;}
+.col-2{grid-column:span 2;}
 .col-3{grid-column:span 3;}
 .col-4{grid-column:span 4;}
 .col-6{grid-column:span 6;}
@@ -455,13 +484,13 @@ textarea{resize:vertical;line-height:1.65;}
   .search-box input:focus{width:100%;}
   .clock{font-size:11px;padding:4px 8px;}
   .form-grid{grid-template-columns:1fr;}
-  .col-3,.col-4,.col-6,.col-8,.col-12{grid-column:span 1;}
+  .col-2,.col-3,.col-4,.col-6,.col-8,.col-12{grid-column:span 1;}
   #treeWrap{padding:26px 16px 100px 66px;}
   .member-tooltip{width:min(290px,90vw);}
 }
 /* ============ 打印 ============ */
 @media print{
-  header,.cops,.zoom-ctrl,.modal-backdrop,.gen-layer,.member-tooltip,.print-btn{display:none !important;}
+  header,.cops,.zoom-ctrl,.modal-backdrop,.gen-layer,.member-tooltip,.print-btn,.big-add,.add-menu{display:none !important;}
   body{overflow:visible;height:auto;background:#fff;}
   main{overflow:visible;background:#fff;}
   #treeWrap{padding:10px;width:auto;zoom:1 !important;}
@@ -473,7 +502,7 @@ textarea{resize:vertical;line-height:1.65;}
 </style>
 </head>
 <body class="">
-<script id="embedded-data" type="application/json">{"version":1792817722556,"exportedAt":"2026-10-24T04:55:22.557Z","members":[{"name":"覃义仁","gender":"M","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyahjoj2jja","mmvkybv047dwi0"],"genName":"","birthplace":"辰溪县","residence":"","occupation":"大明王朝指挥","notes":"以仁：葬于老坟山。曾任大明王朝指挥，明永乐二年（1404），由江西迁居辰州府，不\n久又转迁常德府武陵县永寿乡洩陂村覃家塝（今属湖南省常德市鼎城区周家店镇下辖）。来时\n传语云：男妇七口，白马二匹，白狗二只，塘堰一十三口，粮米一十八石。其弟以文配宋姚，\n以明配陈姚，其后必荣未同迁来，闻之迁居桃源黄楚城（今位于常德市桃源县青林回族维吾尔\n族乡黄楚、金鸡两村附近）。首修谱赞曰：\"星宿之水，昆仑之山。分支别派，万峰千峦。绵\n绵翼翼，本本源源。洪惟我祖，有如是观。\"二修谱赞曰：\"如水之源，江汉流行。如木之根，\n枝叶发荣。绵绵翼翼，继继承承。相观卜吉，佑启后人。\"三修赞曰：\"本之有本，水之有源。\n人之有祖，亘古已然。仁公始祖，历经两迁。迁来我地，辟地开山。修塘筑坝，美池良田。劳\n劳恩息，足食足穿。繁衍子孙，遍及中原。","id":"mmvkxxid1v40en","rank":"","relationNote":"","marriageType":"元配"},{"name":"向氏","gender":"F","birth":"不详","death":"不详","fatherId":null,"motherId":null,"spouseIds":["mmvkxxid1v40en"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyahjoj2jja","rank":"","relationNote":"","marriageType":"元配"},{"name":"黄氏","gender":"F","birth":"","death":"不详","fatherId":null,"motherId":null,"spouseIds":["mmvkxxid1v40en"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkybv047dwi0","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃纲","gender":"M","birth":"","death":"","fatherId":"mmvkxxid1v40en","motherId":"mmvkybv047dwi0","spouseIds":["mmvkzgz6dogugu"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkycm9ggowgv","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃纪","gender":"M","birth":"","death":"","fatherId":"mmvkxxid1v40en","motherId":"mmvkybv047dwi0","spouseIds":["mmvkyi6y8b4zsl"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkydk9wi2kig","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃缵","gender":"M","birth":"","death":"","fatherId":"mmvkxxid1v40en","motherId":"mmvkybv047dwi0","spouseIds":["mmvkyk7balu1zx"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkye0ece1uzr","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃红","gender":"M","birth":"","death":"","fatherId":"mmvkxxid1v40en","motherId":"mmvkybv047dwi0","spouseIds":["mmvkykdsez32je"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyflzglxgm6","rank":"","relationNote":"","marriageType":"元配"},{"name":"韩氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkydk9wi2kig"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyi6y8b4zsl","rank":"","relationNote":"","marriageType":"元配"},{"name":"伍氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkye0ece1uzr"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyk7balu1zx","rank":"","relationNote":"","marriageType":"元配"},{"name":"秦氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyflzglxgm6"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkykdsez32je","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃仲讯","gender":"M","birth":"","death":"","fatherId":"mmvkydk9wi2kig","motherId":"mmvkyi6y8b4zsl","spouseIds":["mmvkympdnnwft0"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkymg8fqvfuo","rank":"","relationNote":"","marriageType":"元配"},{"name":"陈氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkymg8fqvfuo"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkympdnnwft0","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃永太","gender":"M","birth":"","death":"","fatherId":"mmvkymg8fqvfuo","motherId":"mmvkympdnnwft0","spouseIds":["mmvkyo3gi09ng0"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyno1symajh","rank":"","relationNote":"","marriageType":"元配"},{"name":"文氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyno1symajh"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyo3gi09ng0","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃景源","gender":"M","birth":"","death":"","fatherId":"mmvkyno1symajh","motherId":"mmvkyo3gi09ng0","spouseIds":["mmvkypc2sute66"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyp52zbu9mo","rank":"","relationNote":"","marriageType":"元配"},{"name":"文氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyp52zbu9mo"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkypc2sute66","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃景自","gender":"M","birth":"","death":"","fatherId":"mmvkyno1symajh","motherId":"mmvkyo3gi09ng0","spouseIds":["mmvkyrxbttupzm"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyq2vfjx8d9","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃景闻","gender":"M","birth":"","death":"","fatherId":"mmvkyno1symajh","motherId":"mmvkyo3gi09ng0","spouseIds":["mmvkysbdlmvuu7"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyqh63z2iky","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃景贤","gender":"M","birth":"","death":"","fatherId":"mmvkyno1symajh","motherId":"mmvkyo3gi09ng0","spouseIds":["mmvkyt7agemo3m"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyqtnv93r48","rank":"","relationNote":"","marriageType":"元配"},{"name":"黄氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyq2vfjx8d9"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyrxbttupzm","rank":"","relationNote":"","marriageType":"元配"},{"name":"万氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyqh63z2iky"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkysbdlmvuu7","rank":"","relationNote":"","marriageType":"元配"},{"name":"张氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyqtnv93r48"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyt7agemo3m","rank":"","relationNote":"","marriageType":"元配"},{"name":"李氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkycm9ggowgv"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkzgz6dogugu","rank":"","relationNote":"","marriageType":"元配"}]}</script>
+<script id="embedded-data" type="application/json">{"version":1792902687837,"exportedAt":"2026-10-25T04:31:27.840Z","members":[{"name":"覃义仁","gender":"M","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyahjoj2jja","mmvkybv047dwi0"],"genName":"","birthplace":"辰溪县","residence":"","occupation":"大明王朝指挥","notes":"以仁：葬于老坟山。曾任大明王朝指挥，明永乐二年（1404），由江西迁居辰州府，不\n久又转迁常德府武陵县永寿乡洩陂村覃家塝（今属湖南省常德市鼎城区周家店镇下辖）。来时\n传语云：男妇七口，白马二匹，白狗二只，塘堰一十三口，粮米一十八石。其弟以文配宋姚，\n以明配陈姚，其后必荣未同迁来，闻之迁居桃源黄楚城（今位于常德市桃源县青林回族维吾尔\n族乡黄楚、金鸡两村附近）。首修谱赞曰：\"星宿之水，昆仑之山。分支别派，万峰千峦。绵\n绵翼翼，本本源源。洪惟我祖，有如是观。\"二修谱赞曰：\"如水之源，江汉流行。如木之根，\n枝叶发荣。绵绵翼翼，继继承承。相观卜吉，佑启后人。\"三修赞曰：\"本之有本，水之有源。\n人之有祖，亘古已然。仁公始祖，历经两迁。迁来我地，辟地开山。修塘筑坝，美池良田。劳\n劳恩息，足食足穿。繁衍子孙，遍及中原。","id":"mmvkxxid1v40en","rank":"","relationNote":"","marriageType":"元配"},{"name":"向氏","gender":"F","birth":"不详","death":"不详","fatherId":null,"motherId":null,"spouseIds":["mmvkxxid1v40en"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyahjoj2jja","rank":"","relationNote":"","marriageType":"元配"},{"name":"黄氏","gender":"F","birth":"","death":"不详","fatherId":null,"motherId":null,"spouseIds":["mmvkxxid1v40en"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkybv047dwi0","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃纲","gender":"M","birth":"","death":"","fatherId":"mmvkxxid1v40en","motherId":"mmvkybv047dwi0","spouseIds":["mmvkzgz6dogugu"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkycm9ggowgv","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃纪","gender":"M","birth":"","death":"","fatherId":"mmvkxxid1v40en","motherId":"mmvkybv047dwi0","spouseIds":["mmvkyi6y8b4zsl"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkydk9wi2kig","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃缵","gender":"M","birth":"","death":"","fatherId":"mmvkxxid1v40en","motherId":"mmvkybv047dwi0","spouseIds":["mmvkyk7balu1zx"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkye0ece1uzr","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃红","gender":"M","birth":"","death":"","fatherId":"mmvkxxid1v40en","motherId":"mmvkybv047dwi0","spouseIds":["mmvkykdsez32je"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyflzglxgm6","rank":"","relationNote":"","marriageType":"元配"},{"name":"韩氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkydk9wi2kig"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyi6y8b4zsl","rank":"","relationNote":"","marriageType":"元配"},{"name":"伍氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkye0ece1uzr"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyk7balu1zx","rank":"","relationNote":"","marriageType":"元配"},{"name":"秦氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyflzglxgm6"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkykdsez32je","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃仲讯","gender":"M","birth":"","death":"","fatherId":"mmvkydk9wi2kig","motherId":"mmvkyi6y8b4zsl","spouseIds":["mmvkympdnnwft0"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkymg8fqvfuo","rank":"","relationNote":"","marriageType":"元配"},{"name":"陈氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkymg8fqvfuo"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkympdnnwft0","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃永太","gender":"M","birth":"","death":"","fatherId":"mmvkymg8fqvfuo","motherId":"mmvkympdnnwft0","spouseIds":["mmvkyo3gi09ng0"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyno1symajh","rank":"","relationNote":"","marriageType":"元配"},{"name":"文氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyno1symajh"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyo3gi09ng0","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃景源","gender":"M","birth":"","death":"","fatherId":"mmvkyno1symajh","motherId":"mmvkyo3gi09ng0","spouseIds":["mmvkypc2sute66"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyp52zbu9mo","rank":"","relationNote":"","marriageType":"元配"},{"name":"文氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyp52zbu9mo"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkypc2sute66","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃景自","gender":"M","birth":"","death":"","fatherId":"mmvkyno1symajh","motherId":"mmvkyo3gi09ng0","spouseIds":["mmvkyrxbttupzm"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyq2vfjx8d9","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃景闻","gender":"M","birth":"","death":"","fatherId":"mmvkyno1symajh","motherId":"mmvkyo3gi09ng0","spouseIds":["mmvkysbdlmvuu7"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyqh63z2iky","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃景贤","gender":"M","birth":"","death":"","fatherId":"mmvkyno1symajh","motherId":"mmvkyo3gi09ng0","spouseIds":["mmvkyqtnv93r48","mmvkyt7agemo3m"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyqtnv93r48","rank":"","relationNote":"","marriageType":"元配"},{"name":"黄氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyq2vfjx8d9"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyrxbttupzm","rank":"","relationNote":"","marriageType":"元配"},{"name":"万氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyqh63z2iky"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkysbdlmvuu7","rank":"","relationNote":"","marriageType":"元配"},{"name":"张氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkyqtnv93r48"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkyt7agemo3m","rank":"","relationNote":"","marriageType":"元配"},{"name":"李氏","gender":"F","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvkycm9ggowgv"],"genName":"","birthplace":"","residence":"","occupation":"","notes":"","id":"mmvkzgz6dogugu","rank":"","relationNote":"","marriageType":"元配"},{"name":"覃斌","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvkyp52zbu9mo","motherId":"mmvkypc2sute66","spouseIds":["mmvnb41lgsg16q"],"genName":"","rank":"长子","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnb353abck0q"},{"name":"万氏","gender":"F","marriageType":"元配","birth":"失考","death":"失考","fatherId":null,"motherId":null,"spouseIds":["mmvnb353abck0q"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnb41lgsg16q"},{"name":"覃廷荣","gender":"M","marriageType":"元配","birth":"失考","death":"屋后山","fatherId":"mmvnb353abck0q","motherId":"mmvnb41lgsg16q","spouseIds":["mmvnbqfm4yv23p"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnb52ik4lpbe"},{"name":"覃廷爵","gender":"M","marriageType":"元配","birth":"失考","death":"蛇儿山","fatherId":"mmvnb353abck0q","motherId":"mmvnb41lgsg16q","spouseIds":["mmvnbvhxomagwa"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnb5gmczz4rv"},{"name":"覃乾","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvkyq2vfjx8d9","motherId":"mmvkyrxbttupzm","spouseIds":["mmvnb800lcncst"],"genName":"祖","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnb7ohwwdwwb"},{"name":"刘氏","gender":"F","marriageType":"元配","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvnb7ohwwdwwb"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnb800lcncst"},{"name":"覃廷栋","gender":"M","marriageType":"元配","birth":"","death":"","fatherId":"mmvnb7ohwwdwwb","motherId":"mmvnb800lcncst","spouseIds":[],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnb8c57s2ydd"},{"name":"覃銮","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvkyqh63z2iky","motherId":"mmvkysbdlmvuu7","spouseIds":["mmvnba65u90wvy"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnb9hmsqgol3"},{"name":"**","gender":"F","marriageType":"元配","birth":"","death":"","fatherId":null,"motherId":null,"spouseIds":["mmvnb9hmsqgol3"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnba65u90wvy"},{"name":"覃廷秀","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvnb9hmsqgol3","motherId":"mmvnba65u90wvy","spouseIds":[],"genName":"","rank":"次子","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbb7ccae31w"},{"name":"覃廷禄","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvnb9hmsqgol3","motherId":"mmvnba65u90wvy","spouseIds":[],"genName":"","rank":"三子","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbc9kkd0f8c"},{"name":"覃廷章","gender":"M","marriageType":"元配","birth":"","death":"","fatherId":"mmvnb9hmsqgol3","motherId":"mmvnba65u90wvy","spouseIds":[],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbcq0bgt2e1"},{"name":"覃廷喜","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvnb9hmsqgol3","motherId":"mmvnba65u90wvy","spouseIds":[],"genName":"","rank":"四子","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbet0s1uas4"},{"name":"覃廷用","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvnb9hmsqgol3","motherId":"mmvnba65u90wvy","spouseIds":[],"genName":"","rank":"五子","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbf2iki4rdp"},{"name":"覃廷举","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvnb9hmsqgol3","motherId":"mmvnba65u90wvy","spouseIds":[],"genName":"","rank":"六子","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbfkpggokvz"},{"name":"覃六","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvkyqtnv93r48","motherId":"mmvkyt7agemo3m","spouseIds":["mmvnbjyho896yn"],"genName":"","rank":"长子","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbjfnw9ke9v"},{"name":"**","gender":"F","marriageType":"元配","birth":"失考","death":"失考","fatherId":null,"motherId":null,"spouseIds":["mmvnbjfnw9ke9v"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbjyho896yn"},{"name":"覃廷理","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvnbjfnw9ke9v","motherId":"mmvnbjyho896yn","spouseIds":[],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"（注：清光绪十年首修谱采访得车堰大理宗支，改名廷理合谱续之）。","id":"mmvnbmgb1adyo0"},{"name":"屠氏","gender":"F","marriageType":"元配","birth":"失考","death":"屋后山","fatherId":null,"motherId":null,"spouseIds":["mmvnb52ik4lpbe"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbqfm4yv23p"},{"name":"曾氏","gender":"F","marriageType":"元配","birth":"","death":"蛇儿山","fatherId":null,"motherId":null,"spouseIds":["mmvnb5gmczz4rv"],"genName":"","rank":"","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbvhxomagwa"},{"name":"覃炼","gender":"M","marriageType":"元配","birth":"失考","death":"失考","fatherId":"mmvnb5gmczz4rv","motherId":"mmvnbvhxomagwa","spouseIds":[],"genName":"","rank":"长子","birthplace":"","residence":"","occupation":"","relationNote":"","notes":"","id":"mmvnbwxl1fsf2c"}]}</script>
 
 <header>
   <h1>覃氏<span>族谱</span></h1>
@@ -486,7 +515,7 @@ textarea{resize:vertical;line-height:1.65;}
     <button class="hbtn" id="themeBtn">🎨 主题</button>
     <div class="theme-panel" id="themePanel" hidden=""></div>
   </div>
-  <div class="clock" id="clock">2026-10-24 周六 12:55:22</div>
+  <div class="clock" id="clock">2026-10-25 周日 12:31:27</div>
   <div class="search-box">
     <input id="searchInput" placeholder="搜索姓名 / 籍贯 / 简介…" autocomplete="off">
     <div id="suggestions" class="suggestions" hidden=""></div>
@@ -500,7 +529,7 @@ textarea{resize:vertical;line-height:1.65;}
 <div class="gen-layer" id="genLayer"></div>
 
 <!-- 悬停详情浮窗 -->
-<div class="member-tooltip" id="memberTooltip" style="display: none; visibility: visible; left: 514px; top: 385.85px;"></div>
+<div class="member-tooltip" id="memberTooltip" style="display: none; visibility: visible; left: 456.5px; top: 270.475px;"></div>
 
 <div class="zoom-ctrl">
   <button id="zoomOut" title="缩小">−</button>
@@ -512,7 +541,7 @@ textarea{resize:vertical;line-height:1.65;}
 
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
-    <h2 id="modalTitle">添加成员</h2>
+    <h2 id="modalTitle">添加子嗣</h2>
     <div id="modalBody"></div>
     <div class="modal-actions">
       <button id="cancelBtn">取消</button>
@@ -525,7 +554,7 @@ textarea{resize:vertical;line-height:1.65;}
 /* =========================================================
    基础
    ========================================================= */
-const STORAGE_KEY = 'qin_family_tree_share_1792817722556';
+const STORAGE_KEY = 'qin_family_tree_share_1792902687837';
 const THEME_KEY   = 'qin_family_tree_theme';
 const mainEl      = document.getElementById('mainEl');
 const treeWrap    = document.getElementById('treeWrap');
@@ -536,7 +565,7 @@ let scale = 1;
 let locked = true;          /* 任何初次加载都强制锁定 */
 let suppressClick = false;
 
-/* 排行选项（20 个） */
+/* 排行选项（20 个）：前 10 为男性，后 10 为女性 */
 const RANK_OPTIONS = [
   '长子','次子','三子','四子','五子','六子','七子','八子','九子','十子',
   '长女','次女','三女','四女','五女','六女','七女','八女','九女','十女'
@@ -567,6 +596,25 @@ function toCN(n){
 function dateStamp(){
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/* 根据性别与序号生成排行名称（idx 从 0 开始） */
+function rankName(gender, idx){
+  const base = gender === 'F' ? '女' : '子';
+  const arr = ['长','次','三','四','五','六','七','八','九','十'];
+  if(idx < 10) return arr[idx] + base;
+  return toCN(idx + 1) + base;
+}
+
+/* 性别切换时保留序号、切换男/女后缀 */
+function switchRankGender(cur, gender){
+  const listM = RANK_OPTIONS.slice(0, 10);
+  const listF = RANK_OPTIONS.slice(10, 20);
+  const idxM = listM.indexOf(cur);
+  const idxF = listF.indexOf(cur);
+  const idx = idxM >= 0 ? idxM : (idxF >= 0 ? idxF : 0);
+  const list = gender === 'F' ? listF : listM;
+  return list[Math.min(idx, list.length - 1)] || '';
 }
 
 /* =========================================================
@@ -706,6 +754,15 @@ function getMember(id){
   return members.find(m => m.id === id);
 }
 
+/* 双向建立配偶关系 */
+function linkSpouses(a, b){
+  if(!a || !b || a.id === b.id) return;
+  a.spouseIds = a.spouseIds || [];
+  b.spouseIds = b.spouseIds || [];
+  if(!a.spouseIds.includes(b.id)) a.spouseIds.push(b.id);
+  if(!b.spouseIds.includes(a.id)) b.spouseIds.push(a.id);
+}
+
 /* =========================================================
    关系
    ========================================================= */
@@ -724,10 +781,9 @@ function generationOf(id, seen){
   return 1;
 }
 
+/* 子嗣：保持 members 数组顺序（即从左至右的兄弟次序） */
 function childrenOf(id){
-  return members
-    .filter(m => m.fatherId === id || m.motherId === id)
-    .sort((a,b)=> String(a.birth || '9999').localeCompare(String(b.birth || '9999')));
+  return members.filter(m => m.fatherId === id || m.motherId === id);
 }
 
 function getRoots(){
@@ -753,17 +809,28 @@ function descendantsOf(id){
   return set;
 }
 
-/* 男子兄弟排行（优先使用填写值，否则自动推算） */
+/* 自动重算某位父/母名下所有子嗣的排行（男女各自从「长」开始） */
+function recomputeRanks(parentId){
+  if(!parentId) return;
+  const kids = childrenOf(parentId);
+  const cnt = { M:0, F:0 };
+  kids.forEach(k=>{
+    const g = (k.gender === 'F') ? 'F' : 'M';
+    k.rank = rankName(g, cnt[g]);
+    cnt[g]++;
+  });
+}
+
+/* 排行显示：优先使用填写值，否则按同父同性别子嗣顺序自动推算 */
 function siblingRankOf(m){
   if(m.rank) return m.rank;
-  if(m.gender !== 'M' || !m.fatherId) return '';
-  const brothers = members
-    .filter(x => x.fatherId === m.fatherId && x.gender === 'M')
-    .sort((a,b)=> String(a.birth || '9999').localeCompare(String(b.birth || '9999')));
-  const idx = brothers.findIndex(x => x.id === m.id);
+  const g = m.gender === 'F' ? 'F' : 'M';
+  const pid = m.fatherId || m.motherId;
+  if(!pid) return '';
+  const sibs = childrenOf(pid).filter(x => (x.gender === 'F' ? 'F' : 'M') === g);
+  const idx = sibs.findIndex(x => x.id === m.id);
   if(idx < 0) return '';
-  const arr = ['长子','次子','三子','四子','五子','六子','七子','八子','九子','十子'];
-  return arr[idx] || (toCN(idx + 1) + '子');
+  return rankName(g, idx);
 }
 
 /* 女性生育统计 */
@@ -890,8 +957,78 @@ function hideMemberTooltip(){
 memberTooltip.addEventListener('mouseenter', cancelHideTooltip);
 memberTooltip.addEventListener('mouseleave', scheduleHideTooltip);
 
-/* 滚动 / 缩放时隐藏浮窗 */
-mainEl.addEventListener('scroll', hideMemberTooltip, { passive: true });
+/* =========================================================
+   添加亲属菜单
+   ========================================================= */
+let addMenuEl = null;
+let addMenuTargetId = null;
+
+const ADD_ROLE_TITLES = {
+  father:'增加父亲', mother:'增加母亲',
+  son:'增加儿子', daughter:'增加女儿',
+  brother:'增加哥哥', youngerBrother:'增加弟弟',
+  sister:'增加姐姐', youngerSister:'增加妹妹'
+};
+
+function ensureAddMenu(){
+  if(addMenuEl) return addMenuEl;
+  addMenuEl = document.createElement('div');
+  addMenuEl.className = 'add-menu';
+  addMenuEl.hidden = true;
+  addMenuEl.innerHTML = Object.keys(ADD_ROLE_TITLES).map(k =>
+    `<div class="add-item" data-role="${k}">${ADD_ROLE_TITLES[k]}</div>`
+  ).join('');
+  document.body.appendChild(addMenuEl);
+  addMenuEl.addEventListener('click', e=>{
+    const item = e.target.closest('.add-item');
+    if(!item) return;
+    const role = item.dataset.role;
+    const id = addMenuTargetId;
+    hideAddMenu();
+    if(id) startAddRole(id, role);
+  });
+  return addMenuEl;
+}
+
+function showAddMenu(id, anchorEl){
+  if(!getMember(id)) return;
+  const el = ensureAddMenu();
+  addMenuTargetId = id;
+  el.hidden = false;
+  el.style.left = '0px';
+  el.style.top = '0px';
+  const r = anchorEl.getBoundingClientRect();
+  const w = el.offsetWidth, h = el.offsetHeight;
+  let left = r.left;
+  let top = r.bottom + 6;
+  if(left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+  if(top + h > window.innerHeight - 8) top = r.top - h - 6;
+  el.style.left = Math.max(8, left) + 'px';
+  el.style.top = Math.max(8, top) + 'px';
+}
+
+function hideAddMenu(){
+  if(addMenuEl) addMenuEl.hidden = true;
+  addMenuTargetId = null;
+}
+
+function startAddRole(targetId, role){
+  const target = getMember(targetId);
+  if(!target) return;
+  if(role === 'father' && target.fatherId){
+    if(!confirm('该成员已有父亲，是否替换为新添加的父亲？')) return;
+  }
+  if(role === 'mother' && target.motherId){
+    if(!confirm('该成员已有母亲，是否替换为新添加的母亲？')) return;
+  }
+  openModal({ relTargetId: targetId, relRole: role });
+}
+
+document.addEventListener('click', e=>{
+  if(addMenuEl && !addMenuEl.hidden && !e.target.closest('.add-menu')){
+    hideAddMenu();
+  }
+});
 
 /* =========================================================
    打印直系世系（以本人为中心，上下直系及其配偶）
@@ -1094,17 +1231,26 @@ function buildNode(m, rendered){
   const li = document.createElement('li');
   const group = document.createElement('div');
   group.className = 'card-group';
-  group.appendChild(makeCard(m, false));
 
+  /* 收集配偶卡片（配偶须为无父无母的独立个体） */
   const spouseList = (m.spouseIds || [])
     .map(sid => getMember(sid))
     .filter(s => s && !rendered.has(s.id) && !s.fatherId && !s.motherId)
     .sort((a, b) => marriageOrder(a) - marriageOrder(b));
 
+  /* 夫妻卡片组：男性固定在左侧（短横线左侧） */
+  const cards = [{ m: m }];
   spouseList.forEach(s=>{
     rendered.add(s.id);
-    group.appendChild(makeCard(s, true));
+    cards.push({ m: s });
   });
+  cards.sort((a, b)=>{
+    const ga = a.m.gender === 'F' ? 1 : 0;
+    const gb = b.m.gender === 'F' ? 1 : 0;
+    return ga - gb;
+  });
+
+  cards.forEach((c, i) => group.appendChild(makeCard(c.m, i > 0)));
 
   li.appendChild(group);
 
@@ -1134,7 +1280,11 @@ function makeCard(m, isSpouse){
     const parts = [];
     if(m.marriageType === '继配') parts.push('继配');
     if(st.s + st.d > 0) parts.push(`生${st.s}子${st.d}女`);
-    lockInfo = parts.join(' · ') || (m.rank || '');
+    if(!parts.length){
+      const r = siblingRankOf(m);
+      if(r) parts.push(r);
+    }
+    lockInfo = parts.join(' · ');
   }else{
     lockInfo = siblingRankOf(m);
   }
@@ -1148,11 +1298,12 @@ function makeCard(m, isSpouse){
     ${dates ? `<div class="cdates">${esc(dates)}</div>` : ''}
     ${m.residence ? `<div class="cplace ${deceased ? 'deceased' : ''}">${placePrefix}：${esc(m.residence)}</div>` : ''}
     <div class="cops">
-      <button data-act="child" title="添加子嗣">＋</button>
+      <button data-act="child" title="添加亲属">＋</button>
       <button data-act="spouse" title="添加配偶">♥</button>
       <button data-act="edit" title="编辑">✎</button>
       <button data-act="del" title="删除">✕</button>
     </div>
+    <div class="big-add" title="添加亲属">＋</div>
     <div class="print-btn" title="打印本支直系世系">🖨</div>`;
 
   el.addEventListener('mouseenter', ()=>{
@@ -1220,7 +1371,7 @@ function drawGenerations(){
   });
 }
 
-mainEl.addEventListener('scroll', scheduleDraw, { passive: true });
+mainEl.addEventListener('scroll', ()=>{ hideAddMenu(); hideMemberTooltip(); scheduleDraw(); }, { passive: true });
 window.addEventListener('resize', scheduleDraw);
 
 if(typeof ResizeObserver !== 'undefined'){
@@ -1287,6 +1438,7 @@ window.addEventListener('mousemove', e=>{
     drag.moved = true;
     document.body.classList.add('dragging');
     hideMemberTooltip();
+    hideAddMenu();
   }
   if(drag.moved){
     mainEl.scrollLeft = drag.sl - dx;
@@ -1315,12 +1467,20 @@ treeWrap.addEventListener('click', e=>{
   if(locked) return;
 
   const id = card.dataset.id;
-  const btn = e.target.closest('button[data-act]');
 
+  /* 大 + 号：弹出亲属菜单 */
+  const bigBtn = e.target.closest('.big-add');
+  if(bigBtn){
+    e.stopPropagation();
+    showAddMenu(id, bigBtn);
+    return;
+  }
+
+  const btn = e.target.closest('button[data-act]');
   if(btn){
     e.stopPropagation();
     const act = btn.dataset.act;
-    if(act === 'child')       openModal({ parentId: id });
+    if(act === 'child')       showAddMenu(id, btn);
     else if(act === 'spouse') openModal({ spouseId: id });
     else if(act === 'edit')   openModal({ editId: id });
     else if(act === 'del')    deleteMember(id);
@@ -1341,6 +1501,7 @@ function applyLock(){
   lockBtn.classList.toggle('on', locked);
   addRootBtn.disabled = locked;
   hideMemberTooltip();
+  hideAddMenu();
   scheduleDraw();
 }
 
@@ -1359,6 +1520,7 @@ const modalTitle = document.getElementById('modalTitle');
 function openModal(opts){
   modalState = opts || {};
   hideMemberTooltip();
+  hideAddMenu();
 
   const isEdit = !!modalState.editId;
   const base = isEdit ? (getMember(modalState.editId) || {}) : {};
@@ -1368,6 +1530,10 @@ function openModal(opts){
 
   if(!isEdit){
     m.spouseIds = [];
+    m.fatherId = null;
+    m.motherId = null;
+
+    /* 从卡片「添加子嗣」进入 */
     if(modalState.parentId){
       const p = getMember(modalState.parentId);
       if(p){
@@ -1381,6 +1547,8 @@ function openModal(opts){
       }
       surnameOn = true;
     }
+
+    /* 从卡片「添加配偶」进入 */
     if(modalState.spouseId){
       const sp = getMember(modalState.spouseId);
       if(sp){
@@ -1389,13 +1557,45 @@ function openModal(opts){
       }
       surnameOn = false;
     }
+
+    /* 从「添加亲属」菜单进入 */
+    if(modalState.relTargetId && modalState.relRole){
+      const t = getMember(modalState.relTargetId);
+      const role = modalState.relRole;
+      if(t){
+        if(role === 'father'){
+          m.gender = 'M';
+        }else if(role === 'mother'){
+          m.gender = 'F';
+        }else if(role === 'son' || role === 'daughter'){
+          m.gender = role === 'son' ? 'M' : 'F';
+          if(t.gender === 'F') m.motherId = t.id;
+          else m.fatherId = t.id;
+          const sp = (t.spouseIds || []).map(getMember).find(x => x);
+          if(sp){
+            if(t.gender === 'F') m.fatherId = sp.id;
+            else m.motherId = sp.id;
+          }
+        }else if(role === 'brother' || role === 'youngerBrother'
+              || role === 'sister'  || role === 'youngerSister'){
+          m.gender = (role === 'brother' || role === 'youngerBrother') ? 'M' : 'F';
+          m.fatherId = t.fatherId || null;
+          m.motherId = t.motherId || null;
+        }
+      }
+      surnameOn = true;
+    }
   }else{
     surnameOn = (base.name || '').startsWith('覃');
   }
 
+  if(!m.gender) m.gender = 'M';
+
   modalTitle.textContent = isEdit
     ? '编辑成员 · ' + (base.name || '')
-    : (modalState.spouseId ? '添加配偶' : (modalState.parentId ? '添加子嗣' : '添加成员'));
+    : (modalState.relRole
+        ? (ADD_ROLE_TITLES[modalState.relRole] || '添加成员')
+        : (modalState.spouseId ? '添加配偶' : (modalState.parentId ? '添加子嗣' : '添加成员')));
 
   const exclude = new Set();
   if(m.id){
@@ -1419,8 +1619,24 @@ function openModal(opts){
         `${esc(x.name)}（${x.gender === 'F' ? '女' : '男'}·${generationOf(x.id)}世）`))
       .join('');
 
-  const rankOptions = opt('', m.rank || '', '— 无 —') +
-    RANK_OPTIONS.map(r => opt(r, m.rank || '', r)).join('');
+  /* 排行初始值：编辑时优先已有值；新增时按现有同性别子嗣数自动顺延 */
+  let initialRank = m.rank || '';
+  if(!initialRank){
+    if(isEdit){
+      initialRank = siblingRankOf(m);
+    }else{
+      const g = m.gender === 'F' ? 'F' : 'M';
+      const pid = m.fatherId || m.motherId;
+      let idx = 0;
+      if(pid){
+        idx = childrenOf(pid).filter(x => (x.gender === 'F' ? 'F' : 'M') === g).length;
+      }
+      initialRank = rankName(g, idx);
+    }
+  }
+
+  const rankOptions = opt('', initialRank || '', '— 无 —') +
+    RANK_OPTIONS.map(r => opt(r, initialRank || '', r)).join('');
 
   const relationOptions = opt('', m.relationNote || '', '— 无 —') +
     RELATION_OPTIONS.map(r => opt(r, m.relationNote || '', r)).join('');
@@ -1444,7 +1660,7 @@ function openModal(opts){
 
   modalBody.innerHTML = `
     <div class="form-grid">
-      <div class="form-row col-4">
+      <div class="form-row col-6">
         <label>姓名 <b>*</b></label>
         <div class="name-group">
           <button type="button" class="surname-btn ${surnameOn ? 'active' : ''}"
@@ -1452,16 +1668,20 @@ function openModal(opts){
           <input id="f_name" value="${esc(shownName)}" placeholder="名（如 永泰）" autocomplete="off">
         </div>
       </div>
-      <div class="form-row col-4">
+      <div class="form-row col-2">
         <label>性别</label>
         <select id="f_gender">
           <option value="M" ${m.gender !== 'F' ? 'selected' : ''}>男</option>
           <option value="F" ${m.gender === 'F' ? 'selected' : ''}>女</option>
         </select>
       </div>
-      <div class="form-row col-4">
+      <div class="form-row col-2">
         <label>婚配</label>
         <select id="f_marriage">${marriageOptions}</select>
+      </div>
+      <div class="form-row col-2">
+        <label>排行</label>
+        <select id="f_rank">${rankOptions}</select>
       </div>
 
       <div class="form-row col-6">
@@ -1496,28 +1716,24 @@ function openModal(opts){
         <div class="hint">若配偶尚未录入，可先保存本成员，再点其卡片上的 ♥ 添加配偶。</div>
       </div>
 
-      <div class="form-row col-3">
+      <div class="form-row col-4">
         <label>字辈</label>
         <input id="f_gen" value="${esc(m.genName || '')}" placeholder="如 德字辈" autocomplete="off">
       </div>
-      <div class="form-row col-3">
-        <label>排行</label>
-        <select id="f_rank">${rankOptions}</select>
-      </div>
-      <div class="form-row col-3">
+      <div class="form-row col-4">
         <label>籍贯</label>
         <input id="f_birthplace" value="${esc(m.birthplace || '')}" placeholder="如 广西桂平" autocomplete="off">
       </div>
-      <div class="form-row col-3">
+      <div class="form-row col-4">
         <label id="residenceLabel">${residenceLabel}</label>
         <input id="f_residence" value="${esc(m.residence || '')}" placeholder="现居 / 安葬地" autocomplete="off">
       </div>
 
-      <div class="form-row col-4">
+      <div class="form-row col-6">
         <label>职业 / 职务</label>
         <input id="f_occupation" value="${esc(m.occupation || '')}" placeholder="如 教师、务农" autocomplete="off">
       </div>
-      <div class="form-row col-4">
+      <div class="form-row col-6">
         <label>本人备注</label>
         <select id="f_relationNote">${relationOptions}</select>
       </div>
@@ -1566,6 +1782,18 @@ function openModal(opts){
 
   document.getElementById('f_death').addEventListener('input', updateDeathRelatedLabels);
 
+  /* 性别切换时，排行未手动修改过则同步切换男/女后缀 */
+  const genderSel = document.getElementById('f_gender');
+  const rankSel   = document.getElementById('f_rank');
+  let rankTouched = false;
+  rankSel.addEventListener('change', ()=>{ rankTouched = true; });
+  genderSel.addEventListener('change', ()=>{
+    if(rankTouched) return;
+    const cur = rankSel.value;
+    if(!cur) return;
+    rankSel.value = switchRankGender(cur, genderSel.value);
+  });
+
   backdrop.classList.add('show');
   setTimeout(()=>{
     const inp = document.getElementById('f_name');
@@ -1581,7 +1809,10 @@ function closeModal(){
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 backdrop.addEventListener('click', e=>{ if(e.target === backdrop) closeModal(); });
 document.addEventListener('keydown', e=>{
-  if(e.key === 'Escape' && backdrop.classList.contains('show')) closeModal();
+  if(e.key === 'Escape'){
+    if(backdrop.classList.contains('show')) closeModal();
+    hideAddMenu();
+  }
   if(e.key === 'Enter' && backdrop.classList.contains('show') && e.target.tagName === 'INPUT'){
     e.preventDefault();
     document.getElementById('saveBtn').click();
@@ -1623,6 +1854,9 @@ function submitForm(){
     notes: document.getElementById('f_notes').value.trim()
   };
 
+  const relRole = modalState.relRole;
+  const relTargetId = modalState.relTargetId;
+
   let target;
   if(modalState.editId){
     target = getMember(modalState.editId);
@@ -1636,8 +1870,22 @@ function submitForm(){
     data.id = uid();
     members.push(data);
     target = data;
+
+    /* 哥哥/姐姐插在目标之前；弟弟/妹妹插在目标之后，保证「从左至右」的长幼次序 */
+    if(relTargetId && (relRole === 'brother' || relRole === 'sister'
+                    || relRole === 'youngerBrother' || relRole === 'youngerSister')){
+      const t = getMember(relTargetId);
+      if(t){
+        const idx = members.indexOf(target);
+        if(idx >= 0) members.splice(idx, 1);
+        const ti = members.indexOf(t);
+        const insertAt = (relRole === 'brother' || relRole === 'sister') ? ti : ti + 1;
+        members.splice(Math.max(0, insertAt), 0, target);
+      }
+    }
   }
 
+  /* 双向同步配偶关系 */
   target.spouseIds.forEach(sid=>{
     const s = getMember(sid);
     if(s){
@@ -1646,6 +1894,41 @@ function submitForm(){
     }
   });
   target.spouseIds = target.spouseIds.filter(sid => !!getMember(sid));
+
+  /* 添加父亲/母亲：反向挂接 */
+  if(!modalState.editId && relTargetId && (relRole === 'father' || relRole === 'mother')){
+    const t = getMember(relTargetId);
+    if(t){
+      if(relRole === 'father'){
+        t.fatherId = target.id;
+        if(t.motherId){
+          const mo = getMember(t.motherId);
+          if(mo) linkSpouses(target, mo);
+        }
+      }else{
+        t.motherId = target.id;
+        if(t.fatherId){
+          const fa = getMember(t.fatherId);
+          if(fa) linkSpouses(target, fa);
+        }
+      }
+    }
+  }
+
+  /* 新增成员后自动重算相关父/母名下子嗣的排行 */
+  if(!modalState.editId){
+    const pids = new Set();
+    if(target.fatherId) pids.add(target.fatherId);
+    if(target.motherId) pids.add(target.motherId);
+    if(relTargetId){
+      const t = getMember(relTargetId);
+      if(t){
+        if(t.fatherId) pids.add(t.fatherId);
+        if(t.motherId) pids.add(t.motherId);
+      }
+    }
+    pids.forEach(pid => recomputeRanks(pid));
+  }
 
   save();
   closeModal();
@@ -1665,12 +1948,18 @@ function deleteMember(id){
     : `确定要删除「${m.name}」吗？此操作不可撤销。`;
   if(!confirm(msg)) return;
 
+  const parentIds = new Set();
+  if(m.fatherId) parentIds.add(m.fatherId);
+  if(m.motherId) parentIds.add(m.motherId);
+
   members = members.filter(x => x.id !== id);
   members.forEach(x=>{
     if(x.fatherId === id) x.fatherId = null;
     if(x.motherId === id) x.motherId = null;
     x.spouseIds = (x.spouseIds || []).filter(s => s !== id);
   });
+
+  parentIds.forEach(pid => recomputeRanks(pid));
 
   save();
   render();
@@ -1898,6 +2187,7 @@ addRootBtn.addEventListener('click', ()=>openModal({}));
 let resizeTimer = null;
 window.addEventListener('resize', ()=>{
   hideMemberTooltip();
+  hideAddMenu();
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(scheduleDraw, 160);
 });
@@ -1924,5 +2214,6 @@ load();
 render();
 setScale(1);
 </script>
+
 
 </body></html>
