@@ -961,7 +961,7 @@ function printMember(id){
       <td>${esc(m.marriageType || '元配')}</td>
       <td>${esc(siblingRankOf(m) || '—')}</td>
       <td>${esc(m.birth || '—')}</td>
-      <td>${esc(m.death || '—')}</td>
+      <td>${esc(m.death || (isFixedDeceased(m) ? '未详' : '—'))}</td>
       <td>${esc(m.occupation || '—')}</td>
     </tr>`;
   }).join('');
@@ -1208,18 +1208,18 @@ function tryUnlock(){
   }
 }
 
-/* ---------- 1–18 世强制逝世 ---------- */
-function enforceDeceasedRule(){
-  let changed = false;
-  members.forEach(m=>{
-    const g = generationOf(m.id);
-    if(g >= 1 && g <= MAX_DECEASED_GEN && !String(m.death||'').trim()){
-      m.death = '失考';
-      changed = true;
-    }
-  });
-  if(changed) save();
-  return changed;
+/* ---------- 1–18 世一律视为逝世（只判定，不改动数据） ----------
+   逝世时间仍可自由填写或留空；留空表示「未详」，不等于在世。 */
+function isDeceasedMember(m){
+  if(!m) return false;
+  const g = generationOf(m.id);
+  if(g >= 1 && g <= MAX_DECEASED_GEN) return true;
+  return String(m.death||'').trim() !== '';
+}
+function isFixedDeceased(m){
+  if(!m) return false;
+  const g = generationOf(m.id);
+  return g >= 1 && g <= MAX_DECEASED_GEN;
 }
 
 const lockBtn = document.getElementById('lockBtn');
@@ -1257,11 +1257,11 @@ function scheduleHideTooltip(){ if(tooltipHideTimer) clearTimeout(tooltipHideTim
 function showTooltip(m, cardEl){
   if(!locked) return;
   cancelHideTooltip();
-  const deceased = !!(m.death||'').trim();
+  const deceased = isDeceasedMember(m);
   const gen = generationOf(m.id);
   const birth = (m.birth||'').trim()||'不详';
   const death = (m.death||'').trim();
-  const lifeText = deceased ? `${birth} — ${death}` : `${birth} — 在世`;
+  const lifeText = deceased ? `${birth} — ${death || '未详'}` : `${birth} — 在世`;
   const rankText = siblingRankOf(m) || '—';
   const spouseText = (m.spouseIds||[]).map(sid=>{const s=getMember(sid);return s?s.name:'';}).filter(Boolean).join('、') || '—';
 
@@ -1360,14 +1360,14 @@ function openModal(opts){
   const shownName = surnameOn ? (m.name||'').replace(/^覃/,'') : (m.name||'');
   const isBirthUnknown = m.birth==='失考';
   const isDeathUnknown = m.death==='失考';
-  const deceased = (m.death||'').trim() !== '';
+  const deceased = isDeceasedMember(m) || (m.death||'').trim() !== '';
   /* 目标世次：编辑看本人，新增看父辈 / 配偶 */
   let targetGen = 1;
   if(isEdit) targetGen = generationOf(m.id);
   else if(m.fatherId) targetGen = generationOf(m.fatherId) + 1;
   else if(m.motherId) targetGen = generationOf(m.motherId) + 1;
   else if(modalState.spouseId) targetGen = generationOf(modalState.spouseId);
-  const deathLocked = targetGen >= 1 && targetGen <= MAX_DECEASED_GEN;
+  const deathLocked = targetGen >= 1 && targetGen <= MAX_DECEASED_GEN;   /* 固定逝世：仅提示，不锁输入 */
   const residenceLabel = deceased ? '安葬地' : '居住地';
   const notesLabel     = deceased ? '人物生平' : '人物简介';
 
@@ -1388,15 +1388,15 @@ function openModal(opts){
 
       <div class="form-row col-6"><label>出生</label>
         <div class="date-group">
-          <input id="f_birth" value="${esc(m.birth||'')}" ${isBirthUnknown?'readonly':''} placeholder="如 1950 或 1950-03-05">
+          <input id="f_birth" value="${esc(m.birth||'')}" placeholder="如 1950 或 1950-03-05">
           <button type="button" class="unk-btn ${isBirthUnknown?'active':''}" data-target="f_birth">失考</button>
         </div></div>
       <div class="form-row col-6"><label>逝世</label>
         <div class="date-group">
-          <input id="f_death" value="${esc(deathLocked ? ((m.death||'').trim()||'失考') : (m.death||''))}" ${(isDeathUnknown||deathLocked)?'readonly':''} placeholder="${deathLocked ? '第'+targetGen+'世固定为逝世' : '留空表示在世'}">
-          <button type="button" class="unk-btn ${(isDeathUnknown||deathLocked)?'active':''}" data-target="f_death" ${deathLocked?'disabled':''}>失考</button>
+          <input id="f_death" value="${esc(m.death||'')}" placeholder="${deathLocked ? '逝世时间（可留空，未详）' : '留空表示在世'}">
+          <button type="button" class="unk-btn ${isDeathUnknown?'active':''}" data-target="f_death">失考</button>
         </div>
-        ${deathLocked ? '<div class="gen-lock-hint">第 ' + targetGen + ' 世属 1–18 世范围，固定为逝世状态，此栏不可留空、不可改为在世。</div>' : ''}
+        ${deathLocked ? '<div class="gen-lock-hint">第 ' + targetGen + ' 世属 1–18 世，固定为逝世状态；逝世时间可自由填写，留空则显示「未详」，但不会被视为在世。</div>' : ''}
       </div>
 
       <div class="form-row col-6"><label>父亲</label><select id="f_father">${parentOptions(m.fatherId||'')}</select></div>
@@ -1426,20 +1426,27 @@ function openModal(opts){
   const residenceInput  = document.getElementById('f_residence');
 
   function syncDeathLabels(){
-    const has = (deathInput.value||'').trim() !== '';
+    const has = deathLocked || (deathInput.value||'').trim() !== '';
     residenceLabelEl.textContent = has ? '安葬地' : '居住地';
     notesLabelEl.textContent     = has ? '人物生平' : '人物简介';
     residenceInput.placeholder   = has ? '安葬地' : '现居 / 安葬地';
   }
   deathInput.addEventListener('input', syncDeathLabels);
 
+  /* 「失考」按钮：只是快速填入两个字，输入框始终可手动改写 */
   document.querySelectorAll('.unk-btn').forEach(btn=>{
+    const inp = document.getElementById(btn.dataset.target);
+    if(!inp) return;
+    const syncBtn = ()=> btn.classList.toggle('active', (inp.value||'').trim() === '失考');
     btn.addEventListener('click', ()=>{
-      const inp = document.getElementById(btn.dataset.target);
-      if(inp.value==='失考'){ inp.value=''; inp.readOnly=false; btn.classList.remove('active'); }
-      else{ inp.value='失考'; inp.readOnly=true; btn.classList.add('active'); }
+      inp.value = (inp.value||'').trim() === '失考' ? '' : '失考';
+      inp.readOnly = false;
+      inp.focus();
+      syncBtn();
       if(btn.dataset.target === 'f_death') syncDeathLabels();
     });
+    inp.addEventListener('input', syncBtn);
+    syncBtn();
   });
   syncDeathLabels();
 
@@ -1524,12 +1531,6 @@ function submitForm(){
     if(s){ s.spouseIds = s.spouseIds||[]; if(!s.spouseIds.includes(target.id)) s.spouseIds.push(target.id); }
   });
   target.spouseIds = target.spouseIds.filter(sid=>!!getMember(sid));
-
-  /* 1–18 世一律逝世：留空即补「失考」 */
-  const gTarget = generationOf(target.id);
-  if(gTarget >= 1 && gTarget <= MAX_DECEASED_GEN && !String(target.death||'').trim()){
-    target.death = '失考';
-  }
 
   save(); closeModal();
   render();
@@ -1749,9 +1750,8 @@ document.getElementById('importFile').addEventListener('change', e=>{
         const existIds = new Set(members.map(m=>m.id));
         list.forEach(m=>{ if(existIds.has(m.id)) m.id=uid(); members.push(m); });
       }
-      enforceDeceasedRule();
       save(); render();
-      alert(`导入成功，共 ${list.length} 位成员。\n（第 1–18 世已按规则固定为逝世）`);
+      alert(`导入成功，共 ${list.length} 位成员。\n（第 1–18 世成员按规则视为逝世，逝世时间可另行补录）`);
     }catch(err){ alert('导入失败：'+err.message); }
     e.target.value = '';
   };
@@ -1770,10 +1770,8 @@ ensureUnlockUI();
 locked = true;
 applyLock();
 load();
-enforceDeceasedRule();
 renderAll();
 setScale(1);
 </script>
 </body>
 </html>
-<!-- （注：内容由AI生成） -->
