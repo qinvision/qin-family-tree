@@ -1044,6 +1044,184 @@ function openPrintFrame(html){
 /* =========================================================
    锁定
    ========================================================= */
+
+/* =========================================================
+   解锁口令：源码中不含明文，只存摘要分片
+   ========================================================= */
+const MAX_DECEASED_GEN = 18;                 /* 1 – 18 世固定为逝世 */
+const _DP = ["1mQ=","zGTyNrFY","ERP3PKqZ","Fy5OKJKy","McOGcaWU","XKzrhLrT"];
+const _DI = [5,2,0,4,1,3];
+function digestTarget(){
+  const pos = new Array(6);
+  for(let i=0;i<6;i++) pos[_DI[i]] = _DP[i];
+  return pos.join('');
+}
+function b64ToHex(b64){
+  const bin = atob(b64); let h = '';
+  for(let i=0;i<bin.length;i++) h += ('0' + bin.charCodeAt(i).toString(16)).slice(-2);
+  return h;
+}
+const _K256 = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+function rotr32(x,n){ return (x>>>n)|(x<<(32-n)); }
+function sha256Hex(str){
+  const utf8 = unescape(encodeURIComponent(String(str)));
+  const bytes = [];
+  for(let i=0;i<utf8.length;i++) bytes.push(utf8.charCodeAt(i));
+  const len = bytes.length*8;
+  bytes.push(0x80);
+  while(bytes.length%64 !== 56) bytes.push(0);
+  const hi = Math.floor(len/4294967296), lo = len>>>0;
+  bytes.push((hi>>>24)&255,(hi>>>16)&255,(hi>>>8)&255,hi&255,(lo>>>24)&255,(lo>>>16)&255,(lo>>>8)&255,lo&255);
+  const H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const w = new Array(64);
+  for(let off=0; off<bytes.length; off+=64){
+    for(let i=0;i<16;i++) w[i] = (bytes[off+i*4]<<24)|(bytes[off+i*4+1]<<16)|(bytes[off+i*4+2]<<8)|bytes[off+i*4+3];
+    for(let i=16;i<64;i++){
+      const x = w[i-15], y = w[i-2];
+      const s0 = rotr32(x,7)^rotr32(x,18)^(x>>>3);
+      const s1 = rotr32(y,17)^rotr32(y,19)^(y>>>10);
+      w[i] = (w[i-16]+s0+w[i-7]+s1)|0;
+    }
+    let a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(let i=0;i<64;i++){
+      const S1 = rotr32(e,6)^rotr32(e,11)^rotr32(e,25);
+      const ch = (e&f)^(~e&g);
+      const t1 = (h+S1+ch+_K256[i]+w[i])|0;
+      const S0 = rotr32(a,2)^rotr32(a,13)^rotr32(a,22);
+      const mj = (a&b)^(a&c)^(b&c);
+      const t2 = (S0+mj)|0;
+      h=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0;
+    }
+    H[0]=(H[0]+a)|0; H[1]=(H[1]+b)|0; H[2]=(H[2]+c)|0; H[3]=(H[3]+d)|0;
+    H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
+  }
+  let out = '';
+  for(let i=0;i<8;i++) out += ('00000000'+(H[i]>>>0).toString(16)).slice(-8);
+  return out;
+}
+
+/* ---------- 解锁面板 ---------- */
+let unlockEl = null;
+function ensureUnlockUI(){
+  if(unlockEl) return unlockEl;
+  const style = document.createElement('style');
+  style.textContent = `
+  .hbtn:disabled{opacity:.42;cursor:not-allowed;filter:grayscale(.35);}
+  .unlock-overlay{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;
+    padding:22px;background:rgba(24,20,16,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+  .unlock-overlay.show{display:flex;}
+  .unlock-card{width:100%;max-width:352px;background:#f7f2e6;color:#2b2620;border:1px solid rgba(176,141,87,.55);
+    border-radius:4px;padding:28px 26px 22px;text-align:center;box-shadow:0 18px 46px rgba(0,0,0,.42);
+    font-family:"Songti SC","SimSun",serif;position:relative;}
+  .unlock-card::before{content:"";position:absolute;inset:6px;border:1px solid rgba(176,141,87,.3);pointer-events:none;}
+  .unlock-seal{width:48px;height:48px;margin:0 auto 12px;background:#8c1c13;color:#f7f2e6;border-radius:3px;
+    display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;
+    box-shadow:inset 0 0 0 1.5px rgba(247,242,230,.4);}
+  .unlock-card h3{font-size:17px;letter-spacing:.2em;margin-bottom:6px;font-weight:700;}
+  .unlock-card p{font-size:11.5px;color:#8b8172;letter-spacing:.08em;margin-bottom:16px;}
+  .unlock-card input{width:100%;padding:10px;text-align:center;letter-spacing:.28em;font-size:15px;
+    border:1px solid #cbbda2;border-radius:3px;background:#fffdf7;color:#2b2620;outline:none;}
+  .unlock-card input:focus{border-color:#b08d57;box-shadow:0 0 0 3px rgba(176,141,87,.15);}
+  .unlock-actions{display:flex;gap:8px;margin-top:12px;}
+  .unlock-ok{flex:2;padding:9px 0;background:#8c1c13;color:#f7f2e6;border:none;border-radius:3px;
+    font-size:14px;letter-spacing:.2em;cursor:pointer;font-family:inherit;}
+  .unlock-ok:hover{background:#7a1710;}
+  .unlock-cancel{flex:1;padding:9px 0;background:transparent;border:1px solid #cbbda2;border-radius:3px;
+    font-size:13px;letter-spacing:.1em;color:#5c5346;cursor:pointer;font-family:inherit;}
+  .unlock-msg{min-height:18px;font-size:12px;color:#8c1c13;margin-top:8px;letter-spacing:.05em;}
+  .unlock-card.shake{animation:unlockShake .4s ease;}
+  @keyframes unlockShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+  .lock-toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%);background:rgba(43,38,32,.94);
+    color:#f7f2e6;padding:9px 20px;border-radius:2px;font-size:13px;letter-spacing:.08em;z-index:9999;
+    font-family:"Songti SC","SimSun",serif;opacity:0;transition:.25s;pointer-events:none;}
+  .lock-toast.show{opacity:1;}
+  .gen-lock-hint{grid-column:1/-1;color:#8c1c13;font-size:11.5px;line-height:1.6;margin-top:-2px;}
+  `;
+  document.head.appendChild(style);
+
+  const el = document.createElement('div');
+  el.id = 'unlockOverlay';
+  el.className = 'unlock-overlay';
+  el.innerHTML = `
+    <div class="unlock-card" id="unlockCard">
+      <div class="unlock-seal">覃</div>
+      <h3>解 开 族 谱 锁</h3>
+      <p>解锁后可编辑 · 备份 · 导出 · 导入</p>
+      <input id="unlockPwd" type="password" placeholder="请输入解锁密码" autocomplete="off" spellcheck="false">
+      <div class="unlock-actions">
+        <button class="unlock-ok" id="unlockOk">解 锁</button>
+        <button class="unlock-cancel" id="unlockCancel">取消</button>
+      </div>
+      <div class="unlock-msg" id="unlockMsg"></div>
+    </div>`;
+  document.body.appendChild(el);
+
+  el.addEventListener('click', e=>{ if(e.target === el) closeUnlock(); });
+  document.getElementById('unlockCancel').addEventListener('click', closeUnlock);
+  document.getElementById('unlockOk').addEventListener('click', tryUnlock);
+  document.getElementById('unlockPwd').addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); tryUnlock(); }
+    if(e.key === 'Escape'){ e.preventDefault(); closeUnlock(); }
+  });
+  unlockEl = el;
+  return el;
+}
+function lockToast(text){
+  let t = document.getElementById('lockToast');
+  if(!t){ t = document.createElement('div'); t.id = 'lockToast'; t.className = 'lock-toast'; document.body.appendChild(t); }
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=> t.classList.remove('show'), 2400);
+}
+function openUnlock(){
+  ensureUnlockUI();
+  const inp = document.getElementById('unlockPwd');
+  inp.value = '';
+  document.getElementById('unlockMsg').textContent = '';
+  unlockEl.classList.add('show');
+  setTimeout(()=>inp.focus(), 60);
+}
+function closeUnlock(){ if(unlockEl) unlockEl.classList.remove('show'); }
+function tryUnlock(){
+  const inp  = document.getElementById('unlockPwd');
+  const msg  = document.getElementById('unlockMsg');
+  const card = document.getElementById('unlockCard');
+  const val  = inp.value;
+  if(!val){ msg.textContent = '请输入解锁密码'; return; }
+  if(sha256Hex(val) === b64ToHex(digestTarget())){
+    locked = false;
+    applyLock();
+    closeUnlock();
+    lockToast('已解锁，可编辑、备份与导出');
+  }else{
+    msg.textContent = '密码错误，请重新输入';
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    inp.value = ''; inp.focus();
+  }
+}
+
+/* ---------- 1–18 世强制逝世 ---------- */
+function enforceDeceasedRule(){
+  let changed = false;
+  members.forEach(m=>{
+    const g = generationOf(m.id);
+    if(g >= 1 && g <= MAX_DECEASED_GEN && !String(m.death||'').trim()){
+      m.death = '失考';
+      changed = true;
+    }
+  });
+  if(changed) save();
+  return changed;
+}
+
 const lockBtn = document.getElementById('lockBtn');
 const addRootBtn = document.getElementById('addRootBtn');
 function applyLock(){
@@ -1051,10 +1229,19 @@ function applyLock(){
   lockBtn.innerHTML = locked ? '🔒 已锁定' : '🔓 可编辑';
   lockBtn.classList.toggle('on', locked);
   addRootBtn.disabled = locked;
+  ['backupBtn','shareBtn','importBtn'].forEach(id=>{
+    const b = document.getElementById(id);
+    if(b){ b.disabled = locked; b.title = locked ? '请先解锁' : ''; }
+  });
   hideTooltip();
   if(locked) hideAddMenu();
 }
-lockBtn.addEventListener('click', ()=>{ locked=!locked; applyLock(); });
+lockBtn.addEventListener('click', ()=>{
+  if(locked){ openUnlock(); return; }
+  locked = true;
+  applyLock();
+  lockToast('已上锁，当前为只读状态');
+});
 
 /* 顶栏 ＋ 按钮：复制 ＋ 号图标的选择功能 */
 addRootBtn.addEventListener('click', ()=> showAddMenu(addRootBtn, null));
@@ -1174,6 +1361,13 @@ function openModal(opts){
   const isBirthUnknown = m.birth==='失考';
   const isDeathUnknown = m.death==='失考';
   const deceased = (m.death||'').trim() !== '';
+  /* 目标世次：编辑看本人，新增看父辈 / 配偶 */
+  let targetGen = 1;
+  if(isEdit) targetGen = generationOf(m.id);
+  else if(m.fatherId) targetGen = generationOf(m.fatherId) + 1;
+  else if(m.motherId) targetGen = generationOf(m.motherId) + 1;
+  else if(modalState.spouseId) targetGen = generationOf(modalState.spouseId);
+  const deathLocked = targetGen >= 1 && targetGen <= MAX_DECEASED_GEN;
   const residenceLabel = deceased ? '安葬地' : '居住地';
   const notesLabel     = deceased ? '人物生平' : '人物简介';
 
@@ -1199,9 +1393,11 @@ function openModal(opts){
         </div></div>
       <div class="form-row col-6"><label>逝世</label>
         <div class="date-group">
-          <input id="f_death" value="${esc(m.death||'')}" ${isDeathUnknown?'readonly':''} placeholder="留空表示在世">
-          <button type="button" class="unk-btn ${isDeathUnknown?'active':''}" data-target="f_death">失考</button>
-        </div></div>
+          <input id="f_death" value="${esc(deathLocked ? ((m.death||'').trim()||'失考') : (m.death||''))}" ${(isDeathUnknown||deathLocked)?'readonly':''} placeholder="${deathLocked ? '第'+targetGen+'世固定为逝世' : '留空表示在世'}">
+          <button type="button" class="unk-btn ${(isDeathUnknown||deathLocked)?'active':''}" data-target="f_death" ${deathLocked?'disabled':''}>失考</button>
+        </div>
+        ${deathLocked ? '<div class="gen-lock-hint">第 ' + targetGen + ' 世属 1–18 世范围，固定为逝世状态，此栏不可留空、不可改为在世。</div>' : ''}
+      </div>
 
       <div class="form-row col-6"><label>父亲</label><select id="f_father">${parentOptions(m.fatherId||'')}</select></div>
       <div class="form-row col-6"><label>母亲</label><select id="f_mother">${parentOptions(m.motherId||'')}</select></div>
@@ -1329,6 +1525,12 @@ function submitForm(){
   });
   target.spouseIds = target.spouseIds.filter(sid=>!!getMember(sid));
 
+  /* 1–18 世一律逝世：留空即补「失考」 */
+  const gTarget = generationOf(target.id);
+  if(gTarget >= 1 && gTarget <= MAX_DECEASED_GEN && !String(target.death||'').trim()){
+    target.death = '失考';
+  }
+
   save(); closeModal();
   render();
   return target;
@@ -1437,6 +1639,7 @@ function downloadFile(content, filename, mime){
 }
 
 document.getElementById('backupBtn').addEventListener('click', ()=>{
+  if(locked){ lockToast('族谱处于锁定状态，请先解锁后再备份'); return; }
   if(!members.length){ alert('当前没有可导出的数据。'); return; }
   const payload = { app:'覃氏家族族谱', version:7, exportedAt:new Date().toISOString(), members };
   downloadFile(JSON.stringify(payload, null, 2), `覃氏族谱_${dateStamp()}.json`, 'application/json');
@@ -1513,6 +1716,7 @@ function buildExportHTML(){
 }
 
 document.getElementById('shareBtn').addEventListener('click', ()=>{
+  if(locked){ lockToast('族谱处于锁定状态，请先解锁后再导出'); return; }
   if(!members.length){ alert('当前没有可导出的数据。'); return; }
   const html = buildExportHTML();
   downloadFile(html, `覃氏族谱_${dateStamp()}.html`, 'text/html');
@@ -1520,7 +1724,7 @@ document.getElementById('shareBtn').addEventListener('click', ()=>{
 });
 
 document.getElementById('importBtn').addEventListener('click', ()=>{
-  if(locked){ alert('请先解锁再导入。'); return; }
+  if(locked){ lockToast('族谱处于锁定状态，请先解锁后再导入'); return; }
   document.getElementById('importFile').click();
 });
 document.getElementById('importFile').addEventListener('change', e=>{
@@ -1545,8 +1749,9 @@ document.getElementById('importFile').addEventListener('change', e=>{
         const existIds = new Set(members.map(m=>m.id));
         list.forEach(m=>{ if(existIds.has(m.id)) m.id=uid(); members.push(m); });
       }
+      enforceDeceasedRule();
       save(); render();
-      alert(`导入成功，共 ${list.length} 位成员。`);
+      alert(`导入成功，共 ${list.length} 位成员。\n（第 1–18 世已按规则固定为逝世）`);
     }catch(err){ alert('导入失败：'+err.message); }
     e.target.value = '';
   };
@@ -1561,10 +1766,14 @@ try{
   const t = localStorage.getItem(THEME_KEY);
   if(t) applyTheme(t); else applyTheme('zhusha');
 }catch(e){ applyTheme('zhusha'); }
+ensureUnlockUI();
+locked = true;
 applyLock();
 load();
+enforceDeceasedRule();
 renderAll();
 setScale(1);
 </script>
 </body>
 </html>
+<!-- （注：内容由AI生成） -->
