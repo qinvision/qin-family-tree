@@ -2,10 +2,37 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=./%E8%A6%83%E6%B0%8F%E6%97%8F%E8%B0%B1.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>覃氏族谱</title>
+<style>
+  html.denied body{display:none!important}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f6f2ea;color:#8a7f70;font-family:"Noto Sans SC",system-ui,sans-serif}
+  .gate{text-align:center;line-height:2;font-size:14px}
+  .gate a{color:#8c1c13;text-decoration:none}
+</style>
+<script>
+/* 通行证校验：仅接受主页带来的令牌或本标签内已放行的会话，否则回主页 */
+(function () {
+  var TOKEN = "39d54837b6ce42ff258afe87aae9171b";
+  var KEY = "zupu_allowed";
+  var params = new URLSearchParams(location.search);
+  var k = params.get("k");
+  var allowed = false;
+  try {
+    if (k === TOKEN) { sessionStorage.setItem(KEY, "1"); allowed = true; }
+    else if (sessionStorage.getItem(KEY) === "1") { allowed = true; }
+  } catch (e) {}
+  if (!allowed) {
+    document.documentElement.classList.add("denied");
+    location.replace("https://mydjjm.cn/");
+  } else if (k === TOKEN) {
+    history.replaceState(null, "", "./");
+  }
+})();
+</script>
+<meta http-equiv="refresh" content="0; url=./%E8%A6%83%E6%B0%8F%E6%97%8F%E8%B0%B1.html">
 </head>
 <body>
-<p>正在打开覃氏族谱…如未自动跳转，请点击 <a href="./%E8%A6%83%E6%B0%8F%E6%97%8F%E8%B0%B1.html">这里</a>。</p>
+<p class="gate">正在打开覃氏族谱…如未自动跳转，请点击 <a href="./%E8%A6%83%E6%B0%8F%E6%97%8F%E8%B0%B1.html">这里</a>。</p>
 </body>
 </html>
