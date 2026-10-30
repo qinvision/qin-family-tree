@@ -307,22 +307,14 @@ textarea{resize:vertical;line-height:1.65;}
 </style>
 <style>html.denied body{display:none!important}</style>
 <script>
-/* 通行证校验：仅接受主页带来的令牌或本标签内已放行的会话，否则回主页 */
+/* 访问验证：本标签已放行才渲染正文；否则回到族谱根页密码门 */
 (function () {
-  var TOKEN = "39d54837b6ce42ff258afe87aae9171b";
   var KEY = "zupu_allowed";
-  var params = new URLSearchParams(location.search);
-  var k = params.get("k");
   var allowed = false;
-  try {
-    if (k === TOKEN) { sessionStorage.setItem(KEY, "1"); allowed = true; }
-    else if (sessionStorage.getItem(KEY) === "1") { allowed = true; }
-  } catch (e) {}
+  try { allowed = sessionStorage.getItem(KEY) === "1"; } catch (e) {}
   if (!allowed) {
     document.documentElement.classList.add("denied");
-    location.replace("https://mydjjm.cn/");
-  } else if (k === TOKEN) {
-    history.replaceState(null, "", location.pathname);
+    location.replace("./index.html");
   }
 })();
 </script>

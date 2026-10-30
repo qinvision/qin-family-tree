@@ -3,36 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>覃氏族谱</title>
+<title>覃氏族谱 · 访问验证</title>
 <style>
-  html.denied body{display:none!important}
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f6f2ea;color:#8a7f70;font-family:"Noto Sans SC",system-ui,sans-serif}
-  .gate{text-align:center;line-height:2;font-size:14px}
-  .gate a{color:#8c1c13;text-decoration:none}
+  :root{
+    --paper:#f6f2ea; --card:#fffdf9; --ink:#3a332b; --muted:#8a7f70;
+    --red:#8c1c13; --line:#e6ddcc;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:var(--paper);color:var(--ink);
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;padding:24px;}
+  .loading{color:var(--muted);font-size:14px;letter-spacing:.05em;}
+  .gate-card{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:34px 28px 28px;box-shadow:0 12px 32px rgba(90,72,48,.10);text-align:center;}
+  .gate-card h1{margin:0 0 6px;font-family:"Noto Serif SC","Songti SC",serif;font-size:24px;font-weight:700;letter-spacing:.12em;}
+  .gate-card .sub{margin:0 0 22px;color:var(--muted);font-size:14px;}
+  .gate-card input[type=password]{width:100%;height:46px;padding:0 14px;font-size:16px;
+    border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);outline:none;}
+  .gate-card input[type=password]:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(140,28,19,.10);}
+  .err{min-height:20px;margin:10px 0 0;font-size:13px;color:var(--red);}
+  .gate-card button{width:100%;height:46px;margin-top:14px;border:0;border-radius:10px;cursor:pointer;
+    background:var(--red);color:#fff;font-size:15px;letter-spacing:.15em;font-family:inherit;}
+  .gate-card button:disabled{opacity:.6;cursor:default;}
+  .back{display:inline-block;margin-top:18px;color:var(--muted);font-size:13px;text-decoration:none;}
+  .back:hover{color:var(--red);}
 </style>
 <script>
-/* 通行证校验：仅接受主页带来的令牌或本标签内已放行的会话，否则回主页 */
+/* 会话级放行判定：已放行则中转到正文，未放行由下方密码门接管 */
 (function () {
-  var TOKEN = "39d54837b6ce42ff258afe87aae9171b";
   var KEY = "zupu_allowed";
-  var params = new URLSearchParams(location.search);
-  var k = params.get("k");
   var allowed = false;
-  try {
-    if (k === TOKEN) { sessionStorage.setItem(KEY, "1"); allowed = true; }
-    else if (sessionStorage.getItem(KEY) === "1") { allowed = true; }
-  } catch (e) {}
-  if (!allowed) {
-    document.documentElement.classList.add("denied");
-    location.replace("https://mydjjm.cn/");
-  } else if (k === TOKEN) {
-    history.replaceState(null, "", "./");
+  try { allowed = sessionStorage.getItem(KEY) === "1"; } catch (e) {}
+  window.__zupuAllowed = allowed;
+  if (allowed) {
+    var m = document.createElement("meta");
+    m.httpEquiv = "refresh";
+    m.content = "0; url=./%E8%A6%83%E6%B0%8F%E6%97%8F%E8%B0%B1.html";
+    document.head.appendChild(m);
   }
 })();
 </script>
-<meta http-equiv="refresh" content="0; url=./%E8%A6%83%E6%B0%8F%E6%97%8F%E8%B0%B1.html">
 </head>
 <body>
-<p class="gate">正在打开覃氏族谱…如未自动跳转，请点击 <a href="./%E8%A6%83%E6%B0%8F%E6%97%8F%E8%B0%B1.html">这里</a>。</p>
+
+<div class="loading" id="loading" hidden>正在打开覃氏族谱…</div>
+
+<div class="gate-card" id="gate" hidden>
+  <h1>覃氏族谱</h1>
+  <p class="sub">请输入访问密码</p>
+  <form id="gateForm" novalidate>
+    <input type="password" id="pwd" autocomplete="current-password" placeholder="访问密码" aria-label="访问密码">
+    <p class="err" id="err" hidden></p>
+    <button type="submit" id="submitBtn">进入族谱</button>
+  </form>
+  <a class="back" href="https://mydjjm.cn/">返回主页</a>
+</div>
+
+<script>
+(function () {
+  var KEY = "zupu_allowed";
+  var SALT = "e9945ed90df43e47d07e8deb4a04e602";
+  var DIGEST = "c22253e50bc10c84ccfe15b3df6c9937ef6b357ea5bd51613782bd8f0c2faab4";
+  var DOC = "./%E8%A6%83%E6%B0%8F%E6%97%8F%E8%B0%B1.html";
+
+  var loading = document.getElementById("loading");
+  var gate = document.getElementById("gate");
+  var form = document.getElementById("gateForm");
+  var pwd = document.getElementById("pwd");
+  var err = document.getElementById("err");
+  var btn = document.getElementById("submitBtn");
+
+  if (window.__zupuAllowed) {
+    loading.hidden = false;
+    return;
+  }
+  gate.hidden = false;
+  pwd.focus();
+
+  function showErr(msg) { err.textContent = msg; err.hidden = false; }
+
+  async function sha256Hex(text) {
+    var enc = new TextEncoder();
+    var buf = await crypto.subtle.digest("SHA-256", enc.encode(text));
+    return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+      return b.toString(16).padStart(2, "0");
+    }).join("");
+  }
+
+  form.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var value = pwd.value;
+    err.hidden = true;
+    if (!value) { showErr("请输入密码"); pwd.focus(); return; }
+    if (!window.crypto || !crypto.subtle) { showErr("当前浏览器不支持安全校验，请更换浏览器后重试"); return; }
+    btn.disabled = true;
+    sha256Hex(SALT + value).then(function (h) {
+      if (h === DIGEST) {
+        try { sessionStorage.setItem(KEY, "1"); } catch (e) {}
+        location.replace(DOC);
+      } else {
+        btn.disabled = false;
+        showErr("密码不正确，请重新输入");
+        pwd.value = ""; pwd.focus();
+      }
+    }).catch(function () {
+      btn.disabled = false;
+      showErr("校验失败，请重试");
+    });
+  });
+})();
+</script>
 </body>
 </html>
