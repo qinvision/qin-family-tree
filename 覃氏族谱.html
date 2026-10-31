@@ -290,6 +290,16 @@ textarea{resize:vertical;line-height:1.65;}
 }
 .modal-actions button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
 
+/* ============ 解锁编辑密码弹窗 ============ */
+.unlock-modal{width:min(360px,100%);padding:28px 26px 22px;text-align:center;}
+.unlock-modal h2{text-align:center;border-bottom:none;margin:0 0 6px;}
+.unlock-modal .sub{font-size:13px;color:var(--muted);margin-bottom:18px;letter-spacing:.5px;}
+.unlock-modal input[type=password]{width:100%;height:44px;text-align:center;font-size:15px;letter-spacing:2px;}
+.unlock-err{min-height:18px;margin-top:10px;font-size:13px;color:var(--accent);}
+.unlock-actions{display:flex;gap:10px;margin-top:18px;}
+.unlock-actions button{flex:1;height:42px;font-family:inherit;cursor:pointer;border-radius:8px;font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);}
+.unlock-actions button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+
 /* 空状态 */
 .empty{margin:auto;text-align:center;color:var(--muted);padding:40px;}
 .empty-icon{width:88px;height:88px;line-height:88px;margin:0 auto 20px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#f3d9a8;font-size:42px;font-weight:700;}
@@ -369,6 +379,20 @@ textarea{resize:vertical;line-height:1.65;}
       <button id="addMemberBtn">＋ 添加成员</button>
       <button id="cancelBtn">取消</button>
       <button class="primary" id="saveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 解锁编辑密码弹窗 -->
+<div class="modal-backdrop" id="unlockBackdrop">
+  <div class="modal unlock-modal">
+    <h2>解锁编辑</h2>
+    <p class="sub">进入可编辑模式需验证管理密码</p>
+    <input type="password" id="unlockPwd" autocomplete="current-password" placeholder="管理密码" aria-label="管理密码">
+    <p class="unlock-err" id="unlockErr" hidden></p>
+    <div class="unlock-actions">
+      <button id="unlockCancel">取消</button>
+      <button class="primary" id="unlockConfirm">解锁</button>
     </div>
   </div>
 </div>
@@ -1067,7 +1091,63 @@ function applyLock(){
   hideTooltip();
   if(locked) hideAddMenu();
 }
-lockBtn.addEventListener('click', ()=>{ locked=!locked; applyLock(); });
+
+/* 编辑解锁密码：源码仅保存加盐 SHA-256 摘要，不保存明文 */
+const EDIT_SALT = "e9945ed90df43e47d07e8deb4a04e602";
+const EDIT_DIGEST = "c22253e50bc10c84ccfe15b3df6c9937ef6b357ea5bd51613782bd8f0c2faab4";
+
+const unlockBackdrop = document.getElementById('unlockBackdrop');
+const unlockPwd = document.getElementById('unlockPwd');
+const unlockErr = document.getElementById('unlockErr');
+const unlockConfirm = document.getElementById('unlockConfirm');
+const unlockCancel = document.getElementById('unlockCancel');
+
+async function sha256Hex(text){
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(text));
+  return Array.prototype.map.call(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+}
+function openUnlock(){
+  unlockErr.hidden = true; unlockErr.textContent = '';
+  unlockPwd.value = ''; unlockConfirm.disabled = false;
+  unlockBackdrop.classList.add('show');
+  setTimeout(()=>unlockPwd.focus(), 30);
+}
+function closeUnlock(){
+  unlockBackdrop.classList.remove('show');
+  unlockPwd.value = ''; unlockErr.hidden = true; unlockErr.textContent = ''; unlockConfirm.disabled = false;
+}
+async function confirmUnlock(){
+  const value = unlockPwd.value;
+  unlockErr.hidden = true;
+  if(!value){ unlockErr.textContent = '请输入管理密码'; unlockErr.hidden = false; unlockPwd.focus(); return; }
+  if(!window.crypto || !crypto.subtle){ unlockErr.textContent = '当前浏览器不支持安全校验，请更换浏览器'; unlockErr.hidden = false; return; }
+  unlockConfirm.disabled = true;
+  try{
+    const h = await sha256Hex(EDIT_SALT + value);
+    if(h === EDIT_DIGEST){
+      closeUnlock();
+      locked = false;
+      applyLock();
+    }else{
+      unlockConfirm.disabled = false;
+      unlockErr.textContent = '密码不正确，请重新输入'; unlockErr.hidden = false;
+      unlockPwd.value = ''; unlockPwd.focus();
+    }
+  }catch(e){
+    unlockConfirm.disabled = false;
+    unlockErr.textContent = '校验失败，请重试'; unlockErr.hidden = false;
+  }
+}
+unlockConfirm.addEventListener('click', confirmUnlock);
+unlockPwd.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); confirmUnlock(); } });
+unlockCancel.addEventListener('click', closeUnlock);
+unlockBackdrop.addEventListener('mousedown', e => { if(e.target === unlockBackdrop) closeUnlock(); });
+
+lockBtn.addEventListener('click', ()=>{
+  if(!locked){ locked = true; applyLock(); return; }  /* 由可编辑锁回，免密码 */
+  openUnlock();
+});
 
 /* 顶栏 ＋ 按钮：复制 ＋ 号图标的选择功能 */
 addRootBtn.addEventListener('click', ()=> showAddMenu(addRootBtn, null));
